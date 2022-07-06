@@ -1,0 +1,26 @@
+ID,Legend
+1A,Urban
+1B,Non Urban
+2A,Fruit Trees
+2B,Vineyard
+3A,Intensively cultivated (2 Crops/Year)
+3A1,Intensively Cultivated (1 or 2 Crops/Year)
+3C,Active Karez System Agriculture
+3B,Poorly irrigated / Non active Karez
+4A,Flat lying Areas
+4B,Sloping Areas
+6A,Closed Needleaved Trees
+6B,Open Needleaved Trees
+6B1,Closed to Open Undifferenciated Trees
+6C,High Shrubs
+7,Rangeland
+8A,Bare Soil / Rock Outcrops
+8B,Sand Covered Areas
+8C,Sand Dunes
+9A,Permanent Marsh
+9B,Seasonally Inundated Vegetation
+10A,Permanent Lake
+10B,Seasonal Lake
+11,River
+12,River Bank
+13,Snow Covered Area
