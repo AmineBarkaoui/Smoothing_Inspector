@@ -1,13 +1,17 @@
 import datetime
 import calendar
-import pandas as pd
-import streamlit as st
-import altair as alt
 import numpy as np
+import xarary as xr
+import pandas as pd
+import altair as alt
+import streamlit as st
 
+from read_data import read_data
 #from smoothing import smooth
 
-def spaghetti_plot(df, i, c, y1, y2, col2):
+
+
+def spaghetti_plot2(df, i, c, y1, y2, col2):
 
     dts = [datetime.datetime.strptime(str(x), '%j').date() for x in df.index.values]
     xticks = []
@@ -21,17 +25,46 @@ def spaghetti_plot(df, i, c, y1, y2, col2):
 
 
     col2.line_chart(df[cols])
+    
+
+def spaghetti_plot(df, methods, sr, robust, pval_wcv, pval_vc, col2):
+
+    da = xr.DataArray(np.asarray(df['NDVI'], coords = dict(time = df['Date'])))
+    
+    srange = np.arange(sr[0], sr[1], 0.2)
+    
+    smoothed = smooth(da, methods['raw'], methods['garcia'], methods['vcurve'], methods['wcv'], srange,
+                      robust, pval_wcv, pval_vc)
+
+    cols = []       
+    for sm in methods.keys():   
+        if methods[sm]:
+            df[sm] = smoothed[sm]
+            cols.append(sm)
+
+    col2.line_chart(df[cols])
+
 
     
 def main():
 
     st.set_page_config(layout='wide')
 
-    st.title("AFGHANISTAN \n") 
-    st.markdown('### NDVI - time series plots')
-    st.markdown('#')
+    st.title("Smoothing") 
+    #st.markdown('### NDVI - time series plots')
+    #st.markdown('#')
 
-    col1, col, col2 = st.columns([15, 1, 30]) 
+    col1, col, col2 = st.columns([10, 1, 50])     
+    
+    ## Data
+    
+    ndvi_MOD, _, _ = read_data()
+    #ndvi_MOD, ndvi_MYD, ndvi_MXD = read_data()
+        
+    ## Inputs
+    
+    loc_list = list(set(ndvi_MOD.index.values))
+    loc_list.sort()
 
     ct = pd.read_csv('Data/crop_type.csv', index_col = 0, header = 0)
     ct_dict = ct.to_dict()
@@ -43,8 +76,55 @@ def main():
     r_dict = r_dict[list(r_dict.keys())[0]]
     inv_r_dict = {v: k for k, v in r_dict.items()}
 
+
+
     # Widgets
-    y = col1.slider('Year',2002, 2010,(2002, 2021))
+    
+    col1.subheader("Inputs")
+    
+    loc = col1.selectbox('Location', loc_list)
+    
+    col1.markdown('------------')
+    
+    raw = col1.checkbox('Raw',value=True)
+    vcurve = col1.checkbox('V-curve',value=True)
+    garcia = col1.checkbox('Garcia',value=True)
+    wcv = col1.checkbox('WCV',value=True)
+    methods = dict(raw = raw, vcurve = vcurve, garcia = garcia, wcv = wcv)
+        
+    col1.markdown('------------')
+    
+    bound = col1.checkbox('Set bounds to Sopt',value=False)
+    if bound:
+        sr = col1.slider('S range',-1.8, 4.2,(-1.8, 4.2))
+    else: 
+        sr = None
+    
+    col1.markdown('------------')
+    
+    robust = col1.checkbox('Use robust weights',value=True)
+    
+    col1.markdown('------------')
+    
+    expec_wcv = col1.checkbox('Set a p value - WCV',value=True)
+    if expec_wcv:
+        pval_wcv = col1.select_slider('Select a p value for the WCV',
+                                options=[0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.],
+                                value = 0.8)
+    else:
+        pval_wcv = None
+    
+    expec_vc = col1.checkbox('Set a p value - V curve',value=True)
+    if expec_vc:
+        pval_vc = col1.select_slider('Select a p value for the V-curve',
+                                options=[0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.],
+                                value = 0.9)
+    else:
+        pval_vc = None
+        
+    col1.markdown('------------')
+    
+    y = col1.slider('Year',2002, 2021,(2002, 2021))
     c = col1.selectbox('Land Cover', ct['Legend'].values)
     i = col1.selectbox('Region', r['Adm1Name'].values)
 
@@ -53,11 +133,9 @@ def main():
     df = df/10000
 
 
-
-    spaghetti_plot(df, i, c, y[0], y[1], col2)
-
-
-
+    spaghetti_plot2(df, i, c, y[0], y[1], col2)
+    
+    #spaghetti_plot(df.loc[loc], methods, sr, robust, pval_wcv, pval_vc, col2)
 
 
 if __name__ == "__main__":
