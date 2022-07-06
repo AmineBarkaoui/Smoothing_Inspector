@@ -371,7 +371,7 @@ class WhittakerSmoother:
                     "If lc is set, a p value needs to be specified as well."
                 )
 
-            ds_out, sgrid = xarray.apply_ufunc(
+            ds_out, sgrid, fits, pens = xarray.apply_ufunc(
                 ops.ws2doptvplc,
                 self._obj,
                 nodata,
@@ -389,7 +389,7 @@ class WhittakerSmoother:
                 raise ValueError("Need either lagcorr or srange!")
 
             if p:
-                ds_out, sgrid = xarray.apply_ufunc(
+                ds_out, sgrid, fits, pens = xarray.apply_ufunc(
                     ops.ws2doptvp,
                     self._obj,
                     nodata,
@@ -403,7 +403,7 @@ class WhittakerSmoother:
 
             else:
 
-                ds_out, sgrid = xarray.apply_ufunc(
+                ds_out, sgrid, fits, pens = xarray.apply_ufunc(
                     ops.ws2doptv,
                     self._obj,
                     nodata,
@@ -416,6 +416,8 @@ class WhittakerSmoother:
 
         ds_out = ds_out.to_dataset(name=(ds_out.name or "band"))
         ds_out["sgrid"] = np.log10(sgrid).astype("float32")
+        ds_out["fits"] = fits
+        ds_out["pens"] = pens
 
         return ds_out
 
