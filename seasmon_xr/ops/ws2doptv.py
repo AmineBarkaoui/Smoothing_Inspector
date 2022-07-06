@@ -11,12 +11,12 @@ from .ws2d import ws2d
 
 @lazycompile(
     guvectorize(
-        [(float64[:], float64, float64[:], int16[:], float64[:])],
-        "(n),(),(m) -> (n),()",
+        [(float64[:], float64, float64[:], int16[:], float64[:], float64[:], float64[:])],
+        "(n),(),(m) -> (n),(),(m),(m)",
         nopython=True,
     )
 )
-def ws2doptv(y, nodata, llas, out, lopt):
+def ws2doptv(y, nodata, llas, out, lopt, fits, pens):
     """
     Whittaker filter V-curve optimization of S.
 
@@ -95,3 +95,5 @@ def ws2doptv(y, nodata, llas, out, lopt):
     else:
         out[:] = y[:]
         lopt[0] = 0.0
+        fits = numpy.array([])
+        pens= numpy.array([])
