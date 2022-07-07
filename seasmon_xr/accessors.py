@@ -7,7 +7,7 @@ from dask.base import tokenize
 import numpy as np
 import pandas as pd
 import xarray
-#from numba.core.types import float64
+from numba.core.types import float64, int16
 
 from . import ops
 
@@ -378,7 +378,7 @@ class WhittakerSmoother:
                 p,
                 lc,
                 input_core_dims=[["time"], [], [], []],
-                output_core_dims=[["time"], []],
+                output_core_dims=[["time"], [], [], []],
                 dask="parallelized",
                 keep_attrs=True,
             )
@@ -396,9 +396,10 @@ class WhittakerSmoother:
                     p,
                     srange,
                     input_core_dims=[["time"], [], [], ["dim0"]],
-                    output_core_dims=[["time"], []],
+                    output_core_dims=[["time"], [], ["dim1"], ["dim1"]],
                     dask="parallelized",
                     keep_attrs=True,
+                    output_dtypes=[int16[:], float64[:], float64[:], float64[:]]
                 )
 
             else:
@@ -409,7 +410,7 @@ class WhittakerSmoother:
                     nodata,
                     srange,
                     input_core_dims=[["time"], [], ["dim0"]],
-                    output_core_dims=[["time"], []],
+                    output_core_dims=[["time"], [], ["time"], ["time"]],
                     dask="parallelized",
                     keep_attrs=True,
                 )
@@ -418,6 +419,7 @@ class WhittakerSmoother:
         ds_out["sgrid"] = np.log10(sgrid).astype("float32")
         ds_out["fits"] = fits
         ds_out["pens"] = pens
+        #print(fits)
 
         return ds_out
 

@@ -12,7 +12,7 @@ from .ws2d import ws2d
 @lazycompile(
     guvectorize(
         [(float64[:], float64, float64[:], int16[:], float64[:], float64[:], float64[:])],
-        "(n),(),(m) -> (n),(),(m),(m)",
+        "(n),(),(m) -> (n),(),(n),(n)",
         nopython=True,
     )
 )
