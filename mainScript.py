@@ -1,10 +1,10 @@
 import time
-import datetime
-import calendar
+#import datetime
+#import calendar
 import numpy as np
 import xarray as xr
 import pandas as pd
-import altair as alt
+#import altair as alt
 import streamlit as st
 
 from read_data import read_data
@@ -12,7 +12,7 @@ from smoothing import smooth
 
     
 
-def main_plot(smoothed, col2):
+def main_plot(smoothed, methods, col2):
 
     
 #    if sr != None:
@@ -34,13 +34,14 @@ def main_plot(smoothed, col2):
 
     # ORDER: Raw, vcurve, garcia, wcv
     names = ['band', 'smoothed_v', 'smoothed_g', 'smoothed_wcv']
-    dfp = pd.DataFrame(index = df['Date'].values)      
+    dfp = pd.DataFrame(index = smoothed.Date.values)      
     for i,sm in enumerate(methods.keys()):   
         if methods[sm]:
             dfp[sm] = smoothed[names[i]]
 
 
     col2.line_chart(dfp)
+
 
 
 
@@ -51,7 +52,9 @@ def get_data_by_state():
     
 def main():
 
-    ## Layout
+# =============================================================================
+#   Layout
+# =============================================================================
     
     st.set_page_config(layout='wide')
 
@@ -60,8 +63,10 @@ def main():
 
     col1, col, col2 = st.columns([10, 1, 40])  
 
+# =============================================================================
+#    Data 
+# =============================================================================
     
-    ## Data
     
     start_time = time.time()
     ndvi_MOD = get_data_by_state()
@@ -70,7 +75,11 @@ def main():
     loc_list = list(set(ndvi_MOD.index.values))
     loc_list.sort()
     
-    # Widgets inputs
+
+# =============================================================================
+#   Widgets inputs  
+# =============================================================================
+    
     
     col1.subheader("Inputs")
     
@@ -80,7 +89,7 @@ def main():
     
     raw = True #col1.checkbox('Raw',value=True)
     vcurve = col1.checkbox('V-curve',value=True)
-    garcia = col1.checkbox('Garcia',value=True)
+    garcia = col1.checkbox('Garcia',value=False)
     wcv = col1.checkbox('WCV',value=True)
     methods = dict(raw = raw, vcurve = vcurve, garcia = garcia, wcv = wcv)
         
@@ -110,23 +119,26 @@ def main():
         pval_wcv = None
         pval_vc = None
             
-    
-    ## SMOOTHING
+# =============================================================================
+#   Smoothing
+# =============================================================================
     
     start_time = time.time()
     
     df = ndvi_MOD.loc[loc]
-    da = xr.DataArray(np.asarray(df['NDVI']), coords = dict(time = df['Date']))
     
-    smoothed = smooth(da, vcurve, garcia, wcv, robust, sr, pval_wcv, pval_vc)
+    da = xr.DataArray(np.array(df['NDVI']), dims = ['time'], coords = dict(time = df['Date']))
+        
+    smoothed = smooth(da, vcurve, garcia, wcv, robust, pval_wcv, pval_vc, sr)
 
     print(smoothed)
     print("--- %s seconds SMOOTH---" % (time.time() - start_time))
     
+# =============================================================================
+#   Main plot
+# =============================================================================
     
-    # Main plot
-    
-    main_plot(smoothed, col2)
+    main_plot(smoothed, methods, col2)
 
 
 
