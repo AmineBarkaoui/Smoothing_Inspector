@@ -396,7 +396,7 @@ class WhittakerSmoother:
                     p,
                     srange,
                     input_core_dims=[["time"], [], [], ["dim0"]],
-                    output_core_dims=[["time"], [], ["dim1"], ["dim1"]],
+                    output_core_dims=[["time"], [], ["dim0"], ["dim0"]],
                     dask="parallelized",
                     keep_attrs=True,
                     output_dtypes=[int16[:], float64[:], float64[:], float64[:]]
@@ -410,7 +410,7 @@ class WhittakerSmoother:
                     nodata,
                     srange,
                     input_core_dims=[["time"], [], ["dim0"]],
-                    output_core_dims=[["time"], [], ["time"], ["time"]],
+                    output_core_dims=[["time"], [], ["dim0"], ["dim0"]],
                     dask="parallelized",
                     keep_attrs=True,
                 )
