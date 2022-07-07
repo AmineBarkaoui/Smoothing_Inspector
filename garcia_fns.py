@@ -184,15 +184,15 @@ def replace_bad(ndvi_stack):
 def nan_mask(x):
     bad_data = (x == -3000)
     # If only -3000 returns True, else False.
-    fill_vals = bad_data.prod(axis=2).astype(bool)
+    fill_vals = bad_data.astype(bool)
     # If only one value not -3000 returns True, else false. 
-    one_val = ((~bad_data).sum(axis=2) == 1)
+    one_val = ((~bad_data) == 1)
     # If all 0 values returns True, else false.
-    only_0s = ((x == 0).sum(axis=2) == x.shape[2])
+    only_0s = ((x == 0) == x.shape[0])
 
     any_condition = fill_vals + one_val + only_0s
     # NB: '~' inverts booleans True -> False and False -> True
-    any_condition = xarray.DataArray(~any_condition, dims=x.dims[:2])
+    any_condition = xarray.DataArray(~any_condition, dims=x.dims[:])
 
     return any_condition
 
