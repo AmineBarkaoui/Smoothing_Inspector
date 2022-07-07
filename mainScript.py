@@ -1,48 +1,50 @@
 import datetime
 import calendar
 import numpy as np
-import xarary as xr
+import xarray as xr
 import pandas as pd
 import altair as alt
 import streamlit as st
+import time
 
 from read_data import read_data
-#from smoothing import smooth
+from smoothing import smooth
 
-
-
-def spaghetti_plot2(df, i, c, y1, y2, col2):
-
-    dts = [datetime.datetime.strptime(str(x), '%j').date() for x in df.index.values]
-    xticks = []
-    for i,dt in enumerate(dts):
-        xticks.append(calendar.month_name[dt.month][0:3] + ' ' + str(dt.day))
-     
-    #df.index = xticks   
-    cols = []       
-    for y in range(y1, y2+1):
-        cols.append(str(y))
-
-
-    col2.line_chart(df[cols])
     
 
-def spaghetti_plot(df, methods, sr, robust, pval_wcv, pval_vc, col2):
+def main_plot(df, methods, sr, robust, pval_wcv, pval_vc, col2):
 
-    da = xr.DataArray(np.asarray(df['NDVI'], coords = dict(time = df['Date'])))
-    
-    srange = np.arange(sr[0], sr[1], 0.2)
-    
-    smoothed = smooth(da, methods['raw'], methods['garcia'], methods['vcurve'], methods['wcv'], srange,
-                      robust, pval_wcv, pval_vc)
+    da = xr.DataArray(np.asarray(df['NDVI']), coords = dict(time = df['Date']))
 
-    cols = []       
-    for sm in methods.keys():   
+    start_time = time.time()
+    if sr != None:
+    	srange = np.arange(sr[0], sr[1], 0.2)
+    	srange_bool = True
+    	smoothed = smooth(da, methods['raw'], methods['garcia'], methods['vcurve'], methods['wcv'], 
+    					  srange_bool, robust, pval_wcv, pval_vc, srange)
+    else:
+    	srange_bool = False 
+    	smoothed = smooth(da, methods['raw'], methods['garcia'], methods['vcurve'], methods['wcv'], 
+    					  srange_bool, robust, pval_wcv, pval_vc)
+    print("--- %s seconds SMOOTH---" % (time.time() - start_time))
+
+    # # FOR NOW
+    # smoothed = da.to_dataset(name = 'raw')
+    # smoothed['vcurve'] = da
+    # smoothed['garcia'] = da
+    # smoothed['wcv'] = da
+    # ######################
+
+    # ORDER: Raw, vcurve, garcia, wcv
+    names = ['band', 'smoothed_v', 'smoothed_g', 'smoothed_wcv']
+    dfp = pd.DataFrame(index = df['Date'].values)      
+    for i,sm in enumerate(methods.keys()):   
         if methods[sm]:
-            df[sm] = smoothed[sm]
-            cols.append(sm)
+            dfp[sm] = smoothed[names[i]]
 
-    col2.line_chart(df[cols])
+
+    col2.line_chart(dfp)
+
 
 
     
@@ -50,31 +52,24 @@ def main():
 
     st.set_page_config(layout='wide')
 
-    st.title("Smoothing") 
-    #st.markdown('### NDVI - time series plots')
-    #st.markdown('#')
+    st.title("Smoothing Inspector") 
 
-    col1, col, col2 = st.columns([10, 1, 50])     
+    col1, col, col2 = st.columns([10, 1, 40])  
+
+
     
     ## Data
     
-    ndvi_MOD, _, _ = read_data()
-    #ndvi_MOD, ndvi_MYD, ndvi_MXD = read_data()
+    start_time = time.time()
+    ndvi_MOD, ndvi_MYD, ndvi_MXD = read_data()
+    print("--- %s seconds READ DATA---" % (time.time() - start_time))
+
+
         
     ## Inputs
     
     loc_list = list(set(ndvi_MOD.index.values))
     loc_list.sort()
-
-    ct = pd.read_csv('Data/crop_type.csv', index_col = 0, header = 0)
-    ct_dict = ct.to_dict()
-    ct_dict = ct_dict[list(ct_dict.keys())[0]]
-    inv_ct_dict = {v: k for k, v in ct_dict.items()}
-
-    r = pd.read_csv('Data/regions.csv', index_col = 0, header = 0)
-    r_dict = r.to_dict()
-    r_dict = r_dict[list(r_dict.keys())[0]]
-    inv_r_dict = {v: k for k, v in r_dict.items()}
 
 
 
@@ -124,18 +119,9 @@ def main():
         
     col1.markdown('------------')
     
-    y = col1.slider('Year',2002, 2021,(2002, 2021))
-    c = col1.selectbox('Land Cover', ct['Legend'].values)
-    i = col1.selectbox('Region', r['Adm1Name'].values)
-
-    df_path = 'Data/df/' + inv_ct_dict[c] + '/df_' + str(inv_r_dict[i]) + '.csv'
-    df = pd.read_csv(df_path, index_col = 0)
-    df = df/10000
-
-
-    spaghetti_plot2(df, i, c, y[0], y[1], col2)
     
-    #spaghetti_plot(df.loc[loc], methods, sr, robust, pval_wcv, pval_vc, col2)
+    df = ndvi_MOD
+    main_plot(df.loc[loc], methods, sr, robust, pval_wcv, pval_vc, col2)
 
 
 if __name__ == "__main__":
