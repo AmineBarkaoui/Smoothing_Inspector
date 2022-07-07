@@ -14,10 +14,6 @@ def smooth(da, vcurve, garcia, wcv, robust, p_v, p_wcv, srange=None):
     ds = da.to_dataset(name='band')
     nodata = -3000.
     
-    
-    if srange==None:
-        srange = np.arange(-2, 4.2, 0.2, dtype=np.float64)
-    
     if vcurve:
         if p_v != None:
             ds_smoothed_v = da.hdc.whit.whitsvc(nodata = nodata, srange = srange, p = p_v)

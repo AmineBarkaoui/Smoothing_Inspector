@@ -34,7 +34,7 @@ def plot_main(smoothed, methods, col2):
     names = np.array(['vcurve', 'garcia', 'wcv'])[valid].tolist()
     colors = np.array(['red', 'blue', 'green'])[valid].tolist()
     
-    chart1 = alt.Chart(df).mark_line(opacity=0.6, size = 1).encode(
+    chart1 = alt.Chart(df).mark_line(opacity=0.8, size = 1).encode(
       x=alt.X('time'),
       y=alt.Y('value'),
       color=alt.Color('name', scale=alt.Scale(
@@ -42,7 +42,7 @@ def plot_main(smoothed, methods, col2):
             range=colors))
       ).properties(title="Smoothing")
       
-    chart2 = alt.Chart(dfraw).mark_line(color = 'grey', opacity=0.6, size = 1, point=alt.OverlayMarkDef(opacity = 0.6, size = 10)).encode(
+    chart2 = alt.Chart(dfraw).mark_point(color = 'grey', opacity=0.6, size = 7, point=alt.OverlayMarkDef(opacity = 0.6, size = 10)).encode(
       x=alt.X('time'),
       y=alt.Y('value')
       ).properties(title="Smoothing")
@@ -52,25 +52,33 @@ def plot_main(smoothed, methods, col2):
     col2.altair_chart(layers, use_container_width=True)
     
 
-def plot_vcurve(smoothed, methods, col2):
+def plot_vcurve(smoothed, methods, srange, col2):
     
+    print(smoothed.curv)
     # Create DataFrame
-    print(smoothed['curv'][0])
-    df = pd.DataFrame(index = smoothed['curv'][0]) 
-    df.index.name = 'x'     
+    df = pd.DataFrame(index = srange[:-1]) 
+    df.index.name = 'Sopt'     
 
-    df['curv'] = smoothed['curv'][1]
+    df['curv'] = smoothed['curv'].values[:-1]
     df = df.reset_index()
-    df = df.melt('x', var_name='name', value_name='value')
+    df = df.melt('Sopt', var_name='name', value_name='value')
+    
+    print(df)
     
     # Utils
 
     chart = alt.Chart(df).mark_line(opacity=0.6).encode(
-      x=alt.X('x'),
+      x=alt.X('Sopt'),
       y=alt.Y('value')
       ).properties(title="V curve")
     
-    col2.altair_chart(chart, use_container_width=True)
+
+#    sopt = alt.Chart(df.loc(name=smoothed.Sopts_v.values)).mark_rule().encode(
+#        x = alt.X('Sopt')
+#    )
+    
+    
+    col2.altair_chart(chart, use_container_width=False)
 
 
 @st.cache  # No need for TTL this time. It's static data :)
@@ -155,9 +163,14 @@ def main():
     df = ndvi_MOD.loc[loc]
     
     da = xr.DataArray(np.array(df['NDVI'])*10000, dims = ['time'], coords = dict(time = df['Date']))
-
-    smoothed = smooth(da, vcurve, garcia, wcv, robust, pval_wcv, pval_vc, sr)
-
+    
+    if sr==None:
+        srange = np.arange(-2, 4.2, 0.2, dtype=np.float64)
+    else:
+        srange = np.arange(sr[0], sr[1], 0.2, dtype=np.float64)
+        
+    smoothed = smooth(da, vcurve, garcia, wcv, robust, pval_wcv, pval_vc, srange)
+    
     print("--- %s seconds SMOOTH---" % (time.time() - start_time))
     
 # =============================================================================
@@ -171,7 +184,7 @@ def main():
 # =============================================================================
     
     if vcurve:
-        plot_vcurve(smoothed, methods, col2)
+        plot_vcurve(smoothed, methods, srange, col2)
 
 
 
