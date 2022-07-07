@@ -78,7 +78,7 @@ def plot_vcurve(smoothed, methods, srange):
     st.altair_chart(chart, use_container_width=False)
 
 
-def print_sopt(smoothed, methods, st):
+def print_sopt(smoothed, methods):
 
 
 	if methods['vcurve']:
@@ -186,7 +186,7 @@ def main():
     
     plot_main(smoothed, methods)
 
-    print_sopt(smoothed, methods, srange)
+    print_sopt(smoothed, methods)
     
 # =============================================================================
 #   V-curve plot
