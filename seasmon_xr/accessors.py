@@ -371,14 +371,14 @@ class WhittakerSmoother:
                     "If lc is set, a p value needs to be specified as well."
                 )
 
-            ds_out, sgrid, fits, pens = xarray.apply_ufunc(
+            ds_out, sgrid, curv = xarray.apply_ufunc(
                 ops.ws2doptvplc,
                 self._obj,
                 nodata,
                 p,
                 lc,
                 input_core_dims=[["time"], [], [], []],
-                output_core_dims=[["time"], [], [], []],
+                output_core_dims=[["time"], [], ["dim0"]],
                 dask="parallelized",
                 keep_attrs=True,
             )
@@ -389,37 +389,34 @@ class WhittakerSmoother:
                 raise ValueError("Need either lagcorr or srange!")
 
             if p:
-                ds_out, sgrid, fits, pens = xarray.apply_ufunc(
+                ds_out, sgrid, curv = xarray.apply_ufunc(
                     ops.ws2doptvp,
                     self._obj,
                     nodata,
                     p,
                     srange,
                     input_core_dims=[["time"], [], [], ["dim0"]],
-                    output_core_dims=[["time"], [], ["dim0"], ["dim0"]],
+                    output_core_dims=[["time"], [], ["dim0"]],
                     dask="parallelized",
                     keep_attrs=True,
-                    output_dtypes=[int16[:], float64[:], float64[:], float64[:]]
                 )
 
             else:
 
-                ds_out, sgrid, fits, pens = xarray.apply_ufunc(
+                ds_out, sgrid, curv = xarray.apply_ufunc(
                     ops.ws2doptv,
                     self._obj,
                     nodata,
                     srange,
                     input_core_dims=[["time"], [], ["dim0"]],
-                    output_core_dims=[["time"], [], ["dim0"], ["dim0"]],
+                    output_core_dims=[["time"], [], ["dim0"]],
                     dask="parallelized",
                     keep_attrs=True,
                 )
 
         ds_out = ds_out.to_dataset(name=(ds_out.name or "band"))
         ds_out["sgrid"] = np.log10(sgrid).astype("float32")
-        ds_out["fits"] = fits
-        ds_out["pens"] = pens
-        #print(fits)
+        ds_out["curv"] = curv
 
         return ds_out
 
