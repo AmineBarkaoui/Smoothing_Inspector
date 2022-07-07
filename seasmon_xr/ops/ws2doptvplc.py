@@ -19,12 +19,12 @@ from .ws2doptvp import _ws2doptvp
 
 @lazycompile(
     guvectorize(
-        [(int16[:], float64, float64, float64, int16[:], float64[:], float64[:], float64[:])],
-        "(n),(),(),() -> (n),(),(m),(m)",
+        [(int16[:], float64, float64, float64, int16[:], float64[:], float64[:])],
+        "(n),(),(),() -> (n),(),(m)",
         nopython=True,
     )
 )
-def ws2doptvplc(y, nodata, p, lc, out, lopt, fits, pens):
+def ws2doptvplc(y, nodata, p, lc, out, lopt, v):
     """
     Whittaker filter V-curve optimization of S, asymmetric weights and srange from autocorrelation.
 
@@ -68,7 +68,7 @@ def ws2doptvplc(y, nodata, p, lc, out, lopt, fits, pens):
         znew = numpy.zeros(m)
         diff1 = numpy.zeros(m1)
         lamids = numpy.zeros(nl1)
-        v = numpy.zeros(nl1)
+        #v = numpy.zeros(nl1)
         wa = numpy.zeros(m)
         ww = numpy.zeros(m)
 
@@ -164,8 +164,6 @@ def ws2doptvplc(y, nodata, p, lc, out, lopt, fits, pens):
     else:
         out[:] = y[:]
         lopt[0] = 0.0
-        fits = numpy.array([])
-        pens= numpy.array([])
 
 
 @lazycompile(numba.jit(nopython=True, parallel=True, nogil=True))

@@ -12,12 +12,12 @@ from .ws2d import ws2d
 
 @lazycompile(
     guvectorize(
-        [(float64[:], float64, float64, float64[:], int16[:], float64[:], float64[:], float64[:])],
-        "(n),(),(),(m) -> (n),(),(m),(m)",
+        [(float64[:], float64, float64, float64[:], int16[:], float64[:], float64[:])],
+        "(n),(),(),(m) -> (n),(),(m)",
         nopython=True,
     )
 )
-def ws2doptvp(y, nodata, p, llas, out, lopt, fit, pen):
+def ws2doptvp(y, nodata, p, llas, out, lopt, v):
     """
     Whittaker filter V-curve optimization of S and asymmetric weights.
 
@@ -53,7 +53,7 @@ def ws2doptvp(y, nodata, p, llas, out, lopt, fit, pen):
         znew = numpy.zeros(m)
         diff1 = numpy.zeros(m1)
         lamids = numpy.zeros(nl1)
-        v = numpy.zeros(nl1)
+        #v = numpy.zeros(nl1)
         wa = numpy.zeros(m)
         ww = numpy.zeros(m)
 
@@ -145,16 +145,11 @@ def ws2doptvp(y, nodata, p, llas, out, lopt, fit, pen):
             z[0:m] = znew[0:m]
 
         z = ws2d(y, lopt[0], ww)
-        numpy.round_(z, 0, out)
-        pen = pens.astype(float64)
-        fit = fits.astype(float64)
-        
+        numpy.round_(z, 0, out)       
 
     else:
         out[:] = y[:]
         lopt[0] = 0.0
-        fit = numpy.zeros(llas.shape, dtype=float64)
-        pen= numpy.zeros(llas.shape, dtype=float64)
 
 
 @jit(nopython=True)
