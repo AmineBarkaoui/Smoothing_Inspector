@@ -12,7 +12,7 @@ from smoothing import smooth
 
     
 
-def plot_main(smoothed, methods, col2):
+def plot_main(smoothed, methods):
     
     # Create DataFrame
     names = ['smoothed_v', 'smoothed_g', 'smoothed_wcv']
@@ -49,12 +49,11 @@ def plot_main(smoothed, methods, col2):
     
     layers = alt.layer(chart1, chart2).configure_area(tooltip = True).interactive()
     
-    col2.altair_chart(layers, use_container_width=True)
+    st.altair_chart(layers, use_container_width=True)
     
 
-def plot_vcurve(smoothed, methods, srange, col2):
+def plot_vcurve(smoothed, methods, srange):
     
-    print(smoothed.curv)
     # Create DataFrame
     df = pd.DataFrame(index = srange[:-1]) 
     df.index.name = 'Sopt'     
@@ -62,8 +61,6 @@ def plot_vcurve(smoothed, methods, srange, col2):
     df['curv'] = smoothed['curv'].values[:-1]
     df = df.reset_index()
     df = df.melt('Sopt', var_name='name', value_name='value')
-    
-    print(df)
     
     # Utils
 
@@ -78,7 +75,18 @@ def plot_vcurve(smoothed, methods, srange, col2):
 #    )
     
     
-    col2.altair_chart(chart, use_container_width=False)
+    st.altair_chart(chart, use_container_width=False)
+
+
+def print_sopt(smoothed, methods, st):
+
+
+	if methods['vcurve']:
+		st.write('Sopt Vcurve: ', str(smoothed['Sopts_v'].values))
+	if methods['garcia']:
+		st.write('Sopt garcia: ', str(smoothed['Sopts_g'].values))
+	if methods['wcv']:
+		st.write('Sopt WCV: ', str(smoothed['Sopts_wcv'].values))
 
 
 @st.cache  # No need for TTL this time. It's static data :)
@@ -97,16 +105,15 @@ def main():
 
     st.title("Smoothing Inspector") 
 
-    col1, col, col2 = st.columns([10, 1, 40])  
+    # st, col, st = st.columns([10, 1, 40])  
 
 # =============================================================================
 #    Data 
 # =============================================================================
     
     
-    start_time = time.time()
     ndvi_MOD = get_data_by_state()
-    print("--- %s seconds READ DATA---" % (time.time() - start_time))
+
 
     loc_list = list(set(ndvi_MOD.index.values))
     loc_list.sort()
@@ -116,43 +123,43 @@ def main():
 #   Widgets inputs  
 # =============================================================================
     
+    with st.sidebar:
     
-    col1.subheader("Inputs")
-    
-    loc = col1.selectbox('Location', loc_list)
-    
-    col1.markdown('------------')
-    
-    vcurve = col1.checkbox('V-curve',value=True)
-    garcia = col1.checkbox('Garcia',value=True)
-    wcv = col1.checkbox('WCV',value=True)
-    methods = dict(vcurve = vcurve, garcia = garcia, wcv = wcv)       
-    
-    col1.markdown('------------')
-    
-    bound = col1.checkbox('Set bounds to Sopt',value=False)
-    if bound:
-        sr = col1.slider('S range',-2., 4.2,(-2., 4.2))
-    else: 
-        sr = None
-    
-    col1.markdown('------------')
-    
-    robust = col1.checkbox('Use robust weights',value=True)
-    
-    col1.markdown('------------')
-    
-    expec = col1.checkbox('Set a p value',value=True)
-    if expec:
-        pval_wcv = col1.select_slider('Select a p value for the WCV',
-                                options=[0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.],
-                                value = 0.8)
-        pval_vc = col1.select_slider('Select a p value for the V-curve',
-                                options=[0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.],
-                                value = 0.9)
-    else:
-        pval_wcv = None
-        pval_vc = None
+	    
+	    loc = st.selectbox('Location', loc_list)
+	    
+	    st.markdown('------------')
+	    
+	    vcurve = st.checkbox('V-curve',value=True)
+	    garcia = st.checkbox('Garcia',value=True)
+	    wcv = st.checkbox('WCV',value=True)
+	    methods = dict(vcurve = vcurve, garcia = garcia, wcv = wcv)       
+	    
+	    st.markdown('------------')
+	    
+	    bound = st.checkbox('Set bounds to Sopt',value=False)
+	    if bound:
+	        sr = st.slider('S range',-2., 4.2,(-2., 4.2))
+	    else: 
+	        sr = None
+	    
+	    st.markdown('------------')
+	    
+	    robust = st.checkbox('Use robust weights',value=True)
+	    
+	    st.markdown('------------')
+	    
+	    expec = st.checkbox('Set a p value',value=True)
+	    if expec:
+	        pval_wcv = st.select_slider('Select a p value for the WCV',
+	                                options=[0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.],
+	                                value = 0.8)
+	        pval_vc = st.select_slider('Select a p value for the V-curve',
+	                                options=[0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.],
+	                                value = 0.9)
+	    else:
+	        pval_wcv = None
+	        pval_vc = None
             
 # =============================================================================
 #   Smoothing
@@ -177,14 +184,16 @@ def main():
 #   Main plot
 # =============================================================================
     
-    plot_main(smoothed, methods, col2)
+    plot_main(smoothed, methods)
+
+    print_sopt(smoothed, methods, srange)
     
 # =============================================================================
 #   V-curve plot
 # =============================================================================
     
     if vcurve:
-        plot_vcurve(smoothed, methods, srange, col2)
+        plot_vcurve(smoothed, methods, srange)
 
 
 
