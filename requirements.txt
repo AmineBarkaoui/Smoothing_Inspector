@@ -4,3 +4,4 @@ streamlit==1.8.1
 altair==4.1.0
 xarray==0.15.1
 dask==2022.2.0
+numba==0.55.1
