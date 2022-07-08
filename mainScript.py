@@ -34,7 +34,7 @@ def plot_main(smoothed, methods):
     names = np.array(['vcurve', 'garcia', 'wcv'])[valid].tolist()
     colors = np.array(['red', 'blue', 'green'])[valid].tolist()
     
-    chart1 = alt.Chart(df).mark_line(opacity=0.8, size = 1).encode(
+    chart1 = alt.Chart(df, height=400).mark_line(opacity=0.8, size = 1).encode(
       x=alt.X('time'),
       y=alt.Y('value'),
       color=alt.Color('name', scale=alt.Scale(
@@ -42,7 +42,7 @@ def plot_main(smoothed, methods):
             range=colors))
       ).properties(title="Smoothing")
       
-    chart2 = alt.Chart(dfraw).mark_point(color = 'grey', opacity=0.6, size = 7, point=alt.OverlayMarkDef(opacity = 0.6, size = 10)).encode(
+    chart2 = alt.Chart(dfraw, height=400).mark_point(color = 'grey', opacity=0.6, size = 7, point=alt.OverlayMarkDef(opacity = 0.6, size = 10)).encode(
       x=alt.X('time'),
       y=alt.Y('value')
       ).properties(title="Smoothing")
