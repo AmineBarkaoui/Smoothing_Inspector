@@ -144,7 +144,7 @@ def Garcia_smoothing_complete(NDVI_profile, fit_robust=False,
         return(NDVIhat, robust_gcv, robust_weights)
     else: env_its = 4
 
-    if Sopt_Rog: Sopt = robust_gcv[1,1]
+    if Sopt_Rog: Sopt = robust_gcv[0,1]
     else: Sopt = robust_gcv[robust_gcv[:,0].argmin(),1]
 
     Wopt = robust_weights[-1]
