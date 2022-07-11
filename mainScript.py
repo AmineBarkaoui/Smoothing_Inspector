@@ -115,7 +115,7 @@ def main():
     ndvi_MXD = get_data_by_state()
 
 
-    loc_list = list(set(ndvi_MOD.index.values))
+    loc_list = list(set(ndvi_MXD.index.values))
     loc_list.sort()
     
 
