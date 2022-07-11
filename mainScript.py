@@ -70,9 +70,9 @@ def plot_vcurve(smoothed, methods, srange):
       ).properties(title="V curve")
     
 
-#    sopt = alt.Chart(df.loc(name=smoothed.Sopts_v.values)).mark_rule().encode(
-#        x = alt.X('Sopt')
-#    )
+    #sopt = alt.Chart(df.loc[smoothed.Sopts_v.values]).mark_rule().encode(
+    #    x = alt.X('Sopt')
+    #)
     
     
     st.altair_chart(chart, use_container_width=False)
@@ -84,15 +84,15 @@ def print_sopt(smoothed, methods):
 	if methods['vcurve']:
 		st.write('Sopt Vcurve: ', str(smoothed['Sopts_v'].values))
 	if methods['garcia']:
-		st.write('Sopt garcia: ', str(smoothed['Sopts_g'].values))
+		st.write('Sopt Garcia: ', str(smoothed['Sopts_g'].values))
 	if methods['wcv']:
 		st.write('Sopt WCV: ', str(smoothed['Sopts_wcv'].values))
 
 
 @st.cache  # No need for TTL this time. It's static data :)
 def get_data_by_state():
-    ndvi_MOD = read_data()
-    return ndvi_MOD
+    ndvi_MXD = read_data()
+    return ndvi_MXD
     
 def main():
 
@@ -112,7 +112,7 @@ def main():
 # =============================================================================
     
     
-    ndvi_MOD = get_data_by_state()
+    ndvi_MXD = get_data_by_state()
 
 
     loc_list = list(set(ndvi_MOD.index.values))
@@ -167,7 +167,7 @@ def main():
     
     start_time = time.time()
     
-    df = ndvi_MOD.loc[loc]
+    df = ndvi_MXD.loc[loc]
     
     da = xr.DataArray(np.array(df['NDVI'])*10000, dims = ['time'], coords = dict(time = df['Date']))
     
