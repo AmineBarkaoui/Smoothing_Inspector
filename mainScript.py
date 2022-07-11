@@ -52,7 +52,7 @@ def plot_main(smoothed, methods):
     st.altair_chart(layers, use_container_width=True)
     
 
-def plot_vcurve(smoothed, methods, srange):
+def plot_vcurve(smoothed, methods, srange, col):
     
     # Create DataFrame
     df = pd.DataFrame(index = srange[:-1]) 
@@ -75,18 +75,18 @@ def plot_vcurve(smoothed, methods, srange):
     #)
     
     
-    st.altair_chart(chart, use_container_width=False)
+    col.altair_chart(chart, use_container_width=False)
 
 
-def print_sopt(smoothed, methods):
+def print_sopt(smoothed, methods, col):
 
-
-	if methods['vcurve']:
-		st.write('Sopt Vcurve: ', str(smoothed['Sopts_v'].values))
-	if methods['garcia']:
-		st.write('Sopt Garcia: ', str(smoothed['Sopts_g'].values))
-	if methods['wcv']:
-		st.write('Sopt WCV: ', str(smoothed['Sopts_wcv'].values))
+    with col:
+    	if methods['vcurve']:
+    		st.write('Sopt Vcurve: ', str(smoothed['Sopts_v'].values))
+    	if methods['garcia']:
+    		st.write('Sopt Garcia: ', str(smoothed['Sopts_g'].values))
+    	if methods['wcv']:
+    	    st.write('Sopt WCV: ', str(smoothed['Sopts_wcv'].values))
 
 
 @st.cache  # No need for TTL this time. It's static data :)
@@ -185,15 +185,21 @@ def main():
 # =============================================================================
     
     plot_main(smoothed, methods)
+    
+# =============================================================================
+#   Print Sopts
+# =============================================================================
+    
+    col1, col2 = st.columns([40, 40])  
 
-    print_sopt(smoothed, methods)
+    print_sopt(smoothed, methods, col1)
     
 # =============================================================================
 #   V-curve plot
 # =============================================================================
     
     if vcurve:
-        plot_vcurve(smoothed, methods, srange)
+        plot_vcurve(smoothed, methods, srange, col2)
 
 
 
