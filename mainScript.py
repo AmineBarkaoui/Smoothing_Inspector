@@ -42,7 +42,7 @@ def plot_main(smoothed, methods):
             range=colors))
       ).properties(title="Smoothing")
       
-    chart2 = alt.Chart(dfraw, height=400).mark_line(color = 'grey', opacity=0.6, size = 7, point=alt.OverlayMarkDef(opacity = 0.6, size = 10)).encode(
+    chart2 = alt.Chart(dfraw, height=400).mark_line(color = 'grey', opacity=0.6, size = 1, point=alt.OverlayMarkDef(opacity = 0.6, size = 10)).encode(
       x=alt.X('time'),
       y=alt.Y('value')
       ).properties(title="Smoothing")
