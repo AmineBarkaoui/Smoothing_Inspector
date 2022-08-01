@@ -79,6 +79,17 @@ def plot_lta(smoothed, methods, col):
     dfraw = dfraw.reset_index()
     dfraw = dfraw.melt('month', var_name='name', value_name='value')
     
+    std_lta = raw.groupby('time').std(dim='time')
+    
+    dfstd = pd.DataFrame(index = std_lta.time.values) 
+    dfstd['std'] = std_lta.values/10000
+    dfstd.index.name = 'month'
+    dfstd = dfstd.reset_index()
+    dfstd = dfstd.melt('month', var_name='name', value_name='value')
+    
+    dfstd['lower'] = dfraw['value']-dfstd['value']
+    dfstd['upper'] = dfraw['value']+dfstd['value']
+
     valid = list(methods.values())
     names = np.array(['vcurve', 'garcia', 'wcv'])[valid].tolist()
     colors = np.array(['red', 'blue', 'green'])[valid].tolist()
@@ -96,7 +107,15 @@ def plot_lta(smoothed, methods, col):
       y=alt.Y('value')
       ).properties(title="Long Term Average")
     
-    layers = alt.layer(chart1, chart2).configure_area(tooltip = True).interactive()
+    print(dfstd)
+    
+    chart3 = alt.Chart(dfstd).mark_area(color='#17becf',opacity=0.2).encode(
+      x=alt.X('month'),
+      y='lower',
+      y2='upper'
+      ).properties()
+    
+    layers = alt.layer(chart3, chart1, chart2).configure_area(tooltip = True).interactive()
     
     col.altair_chart(layers, use_container_width=True)
     
