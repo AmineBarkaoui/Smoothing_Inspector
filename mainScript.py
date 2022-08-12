@@ -13,20 +13,28 @@ from smoothing import smooth
 
     
 
-def plot_main(smoothed, methods):
+def plot_main(smoothed, methods, choose):
     
+    # Set scalling factors
+    if choose == 'NDVI':
+        coeff = 0.0001 ; offset = 0.
+    else:
+        coeff = 0.02 ; offset = -273.15
+        
     # Create DataFrame
     names = ['smoothed_v', 'smoothed_g', 'smoothed_wcv']
     df = pd.DataFrame(index = smoothed.time.values) 
     df.index.name = 'time'     
     for i,sm in enumerate(methods.keys()):   
         if methods[sm]:
-            df[sm] = smoothed[names[i]]/10000
+            df[sm] = smoothed[names[i]]*coeff + offset
     df = df.reset_index()
     df = df.melt('time', var_name='name', value_name='value')
     
     dfraw = pd.DataFrame(index = smoothed.time.values) 
-    dfraw['raw'] = smoothed['band']/10000
+    raw = smoothed['band']*coeff + offset
+    if choose == 'LST': raw = np.maximum(raw,0) 
+    dfraw['raw'] = raw
     dfraw.index.name = 'time'
     dfraw = dfraw.reset_index()
     dfraw = dfraw.melt('time', var_name='name', value_name='value')
@@ -53,7 +61,13 @@ def plot_main(smoothed, methods):
     st.altair_chart(layers, use_container_width=True)
     
     
-def plot_lta(smoothed, methods, col):
+def plot_lta(smoothed, methods, col, choose):
+    
+    # Set scalling factors
+    if choose == 'NDVI':
+        coeff = 0.0001 ; offset = 0.
+    else:
+        coeff = 0.02 ; offset = -273.15
     
     # Create DataFrame
     names = ['smoothed_v', 'smoothed_g', 'smoothed_wcv']
@@ -64,25 +78,33 @@ def plot_lta(smoothed, methods, col):
             da = xr.DataArray(smoothed[names[i]], dims = ['time'], 
               coords = dict(time = pd.to_datetime(smoothed.time.values).month.values))
             lta = da.groupby('time').mean(dim='time')
-            df[sm] = lta.values/10000
+            df[sm] = lta.values*coeff + offset
     df = df.reset_index()
     df = df.melt('month', var_name='name', value_name='value')
     
     raw = xr.DataArray(smoothed['band'], dims = ['time'], 
                       coords = dict(time = pd.to_datetime(smoothed.time.values).month.values))
+    if choose == 'NDVI':
+        nodata = -3000.
+    else:
+        nodata = 0.
+    raw = raw.where(raw!=nodata)
     
-    lta = raw.groupby('time').mean(dim='time')
+    lta = raw.groupby('time').mean(dim='time', skipna = True)
     
     dfraw = pd.DataFrame(index = lta.time.values) 
-    dfraw['raw'] = lta.values/10000
+    lta_raw = lta.values*coeff + offset
+    if choose == 'LST': lta_raw = np.maximum(lta_raw,0) 
+    dfraw['raw'] = lta_raw
     dfraw.index.name = 'month'
     dfraw = dfraw.reset_index()
     dfraw = dfraw.melt('month', var_name='name', value_name='value')
     
-    std_lta = raw.groupby('time').std(dim='time')
+    std_lta = raw*coeff - offset
+    std_lta = std_lta.groupby('time').std(dim='time', skipna = True)
     
     dfstd = pd.DataFrame(index = std_lta.time.values) 
-    dfstd['std'] = std_lta.values/10000
+    dfstd['std'] = std_lta.values
     dfstd.index.name = 'month'
     dfstd = dfstd.reset_index()
     dfstd = dfstd.melt('month', var_name='name', value_name='value')
@@ -158,9 +180,9 @@ def print_sopt(smoothed, methods, col):
 
 
 @st.cache  # No need for TTL this time. It's static data :)
-def get_data_by_state():
-    ndvi_MXD = read_data()    
-    return ndvi_MXD
+def get_data_by_state(choose):
+    product_MXD = read_data(choose)    
+    return product_MXD
     
 def main():
 
@@ -186,12 +208,9 @@ def main():
 #    Data 
 # =============================================================================
         
-    if choose == 0:
-        ndvi_MXD = get_data_by_state()
-    else:
-        ndvi_MXD = get_data_by_state()
-
-    loc_list = list(set(ndvi_MXD.index.values))
+    product_MXD = get_data_by_state(choose)
+        
+    loc_list = list(set(product_MXD.index.values))
     loc_list.sort()
     
 # =============================================================================
@@ -228,9 +247,17 @@ def main():
 	        pval_wcv = st.select_slider('Select a p value for the WCV',
 	                                options=[0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.],
 	                                value = 0.8)
-	        pval_vc = st.select_slider('Select a p value for the V-curve',
+	        if choose == 'NDVI':
+                 # p at 0.9 by default for the V-curve on NDVI
+                 pval_vc = st.select_slider('Select a p value for the V-curve',
 	                                options=[0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.],
 	                                value = 0.9)
+	        else:
+                 # p at 0.8 by default for the V-curve on LST
+                 pval_vc = st.select_slider('Select a p value for the V-curve',
+	                                options=[0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.],
+	                                value = 0.8)
+                
         else:
 	        pval_wcv = None
 	        pval_vc = None
@@ -241,16 +268,21 @@ def main():
     
     start_time = time.time()
     
-    df = ndvi_MXD.loc[loc]
-        
-    da = xr.DataArray(np.array(df['NDVI'])*10000, dims = ['time'], coords = dict(time = df['Date']))
+    df = product_MXD.loc[loc]
+       
+    if choose == 'NDVI':
+        nodata = -3000.
+        da = xr.DataArray(np.array(df['NDVI'])*10000, dims = ['time'], coords = dict(time = df['Date']))
+    else:
+        nodata = 0.
+        da = xr.DataArray(np.array(df['LST'])*50, dims = ['time'], coords = dict(time = df['Date']))
     
     if sr==None:
         srange = np.arange(-2, 4.2, 0.2, dtype=np.float64)
     else:
         srange = np.arange(sr[0], sr[1], 0.2, dtype=np.float64)
         
-    smoothed = smooth(da, vcurve, garcia, wcv, robust, pval_wcv, pval_vc, srange)
+    smoothed = smooth(da, vcurve, garcia, wcv, robust, pval_wcv, pval_vc, srange, nodata)
         
     print("--- %s seconds SMOOTH---" % (time.time() - start_time))
     
@@ -258,14 +290,14 @@ def main():
 #   Main plot
 # =============================================================================
     
-    plot_main(smoothed, methods)
+    plot_main(smoothed, methods, choose)
     
 # =============================================================================
 #   Long Term Average
 # =============================================================================
     col1, col2 = st.columns([40, 40]) 
     
-    plot_lta(smoothed,methods,col1)
+    plot_lta(smoothed, methods, col1, choose)
     
 # =============================================================================
 #   Print Sopts
@@ -279,7 +311,6 @@ def main():
     
     if vcurve:
         plot_vcurve(smoothed, methods, srange, col2)
-
 
 
 if __name__ == "__main__":

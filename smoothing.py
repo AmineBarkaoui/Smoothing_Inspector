@@ -9,10 +9,9 @@ import seasmon_xr
 from garcia_fns import *
 
 
-def smooth(da, vcurve, garcia, wcv, robust, p_v, p_wcv, srange=None):
+def smooth(da, vcurve, garcia, wcv, robust, p_v, p_wcv, srange=None, nodata = -3000.):
     
     ds = da.to_dataset(name='band')
-    nodata = -3000.
     
     if vcurve:
         if p_v != None:

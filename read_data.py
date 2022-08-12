@@ -2,8 +2,7 @@ import pandas as pd
 
 from helpers import *
 
-def read_data():
-    
+def read_ndvi():
     # loading ndvi_MOD data from csv
     ndvi_MOD = pd.read_csv(
         'data/MOD13A2-MOD13A2-006-results.csv', 
@@ -136,4 +135,36 @@ def read_data():
                   
     ndvi_MXD['Same_composite'] = same_compo 
     
-    return ndvi_MXD#ndvi_MOD, ndvi_MYD
+    return ndvi_MXD
+
+
+def read_lst():
+    
+    # loading ndvi_MOD data from csv
+    lst_MYD = pd.read_csv(
+        'data/MYD11A2-MYD11A2-006-results.csv', 
+        index_col=0, 
+        usecols = ['ID', 
+                   'Date', 
+                   'MYD11A2_006_LST_Day_1km'])
+    
+    
+    #renaming the columns
+    lst_MYD = lst_MYD.rename(columns={"MYD11A2_006_LST_Day_1km": "LST"})
+    
+    
+    # Convert string Date to datetime.date
+    lst_MYD['Date'] = lst_MYD['Date'].apply(fromstring)
+    
+    return lst_MYD
+
+
+def read_data(product):
+    
+    if product == 'NDVI':
+        product_MXD = read_ndvi()
+        
+    else:
+        product_MXD = read_lst()
+        
+    return product_MXD
