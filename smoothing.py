@@ -9,7 +9,7 @@ import seasmon_xr
 from garcia_fns import *
 
 
-def smooth(da, vcurve, garcia, wcv, robust, p_v, p_wcv, srange=None, nodata = -3000.):
+def smooth(da, vcurve, garcia, wcv, robust, p_v, p_wcv, srange=None, nodata = -3000., choose='NDVI'):
     
     ds = da.to_dataset(name='band')
     
@@ -37,7 +37,7 @@ def smooth(da, vcurve, garcia, wcv, robust, p_v, p_wcv, srange=None, nodata = -3
         z = da.to_dataset(name='band')
         
         # Clean the dataset
-        z['band_n'] = replace_bad(z.band)
+        z['band_n'] = replace_bad(z.band, choose)
   
         g_smooth_rens = Garcia_smoothing_complete(z.band_n.values.astype(np.float32),
                                                   fit_robust=robust,

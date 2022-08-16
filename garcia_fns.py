@@ -163,7 +163,7 @@ def Garcia_smoothing_complete(NDVI_profile, fit_robust=False,
 
     return(NDVIhat, robust_gcv, robust_weights, robust_all_gcv)
 
-def replace_bad(ndvi_stack):
+def replace_bad(ndvi_stack, choose):
     
     ndvi_arr = ndvi_stack.values
 
@@ -173,12 +173,15 @@ def replace_bad(ndvi_stack):
     if zmin < -3000:
         ndvi_arr[ndvi_arr < -3000] = -3000
 
-    if zmax > 10000:
+    if zmax > 10000 and choose =='NDVI':
         ndvi_arr[ndvi_arr > 10000] = 10000
 
-    if (zmin < -3000) or (zmax > 10000):
+    if ((zmin < -3000) or (zmax > 10000)) and choose=='NDVI':
         ndvi_stack = xarray.DataArray(ndvi_arr, dims=ndvi_stack.dims)
 
+    if (zmin < -3000) and choose=='LST':
+        ndvi_stack = xarray.DataArray(ndvi_arr, dims=ndvi_stack.dims)
+        
     return ndvi_stack
 
 def nan_mask(x):

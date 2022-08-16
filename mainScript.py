@@ -129,8 +129,6 @@ def plot_lta(smoothed, methods, col, choose):
       y=alt.Y('value')
       ).properties(title="Long Term Average")
     
-    print(dfstd)
-    
     chart3 = alt.Chart(dfstd).mark_area(color='#17becf',opacity=0.2).encode(
       x=alt.X('month'),
       y='lower',
@@ -282,7 +280,7 @@ def main():
     else:
         srange = np.arange(sr[0], sr[1], 0.2, dtype=np.float64)
         
-    smoothed = smooth(da, vcurve, garcia, wcv, robust, pval_wcv, pval_vc, srange, nodata)
+    smoothed = smooth(da, vcurve, garcia, wcv, robust, pval_wcv, pval_vc, srange, nodata, choose)
         
     print("--- %s seconds SMOOTH---" % (time.time() - start_time))
     
