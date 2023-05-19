@@ -1,0 +1,8 @@
+{
+    "_ARRAY_DIMENSIONS": [
+        "latitude",
+        "longitude"
+    ],
+    "coordinates": "spatial_ref",
+    "nodata": 0
+}
