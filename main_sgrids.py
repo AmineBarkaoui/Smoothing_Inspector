@@ -3,6 +3,7 @@ import xarray as xr
 import altair as alt
 import pandas as pd
 import streamlit as st
+from PIL import Image
 from itertools import product
 import matplotlib.pyplot as plt
 
@@ -44,10 +45,6 @@ def plot_main_plt(tile, index):
 
     for i,j in product(range(2), range(2)):
         da = ds[METHODS[2 * i + j]]
-        #if da is None:
-        #    plt.figure()
-        #    plt.show()
-        #    return
         im = da.plot.imshow(ax=axs[i,j], vmin=-4, vmax=4, add_colorbar=False,)
         axs[i,j].set_title(TITLES[METHODS[2 * i + j]])
         axs[i,j].set_xlabel('', fontsize=0)
@@ -107,6 +104,8 @@ def main():
         
         st.title("S grids inspector") 
 
+        grid = st.checkbox('Show MODIS sinusoidal grid', value=False)
+
         tile = st.selectbox('Tile', tiles)
 	    
         st.markdown('------------')
@@ -128,7 +127,11 @@ def main():
 #   Main plot
 # =============================================================================
     
-    plot_main_plt(tile, index) #.to_dataframe())
+    if grid: 
+        st.image(Image.open('data/MODIS_sinusoidal_grid1.gif'), use_column_width=True)
+    
+    else:
+        plot_main_plt(tile, index) #.to_dataframe())
     
 
 if __name__ == "__main__":
