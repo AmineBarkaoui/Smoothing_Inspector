@@ -62,9 +62,9 @@ def plot_main_plt(tile, index):
 
 def read_data(tile, ind):
     try:
-        ds =  xr.open_mfdataset(f'data/sgrids_{ind}/{METHODS[0]}/{tile}', engine='zarr').rename({'sg':METHODS[0]})
+        ds =  xr.open_mfdataset(f'data/sgrids_{ind.lower()}/{METHODS[0]}/{tile}', engine='zarr').rename({'sg':METHODS[0]})
         for m in METHODS[1:]:
-            ds[m] = xr.open_mfdataset(f'data/sgrids_{ind}/{m}/{tile}', engine='zarr').rename({'sg':m})[m]
+            ds[m] = xr.open_mfdataset(f'data/sgrids_{ind.lower()}/{m}/{tile}', engine='zarr').rename({'sg':m})[m]
         return ds
     except: 
         return dict(zip(METHODS, [None, None, None, None]))
