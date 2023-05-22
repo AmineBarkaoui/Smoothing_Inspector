@@ -44,10 +44,10 @@ def plot_main_plt(tile, index):
 
     for i,j in product(range(2), range(2)):
         da = ds[METHODS[2 * i + j]]
-        if da is None:
-            plt.figure()
-            plt.show()
-            return
+        #if da is None:
+        #    plt.figure()
+        #    plt.show()
+        #    return
         im = da.plot.imshow(ax=axs[i,j], vmin=-4, vmax=4, add_colorbar=False,)
         axs[i,j].set_title(TITLES[METHODS[2 * i + j]])
         axs[i,j].set_xlabel('', fontsize=0)
