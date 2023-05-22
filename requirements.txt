@@ -7,5 +7,6 @@ numpy
 pandas
 scipy
 xarray
+zarr
 streamlit_option_menu
 matplotlib
