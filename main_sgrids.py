@@ -65,7 +65,7 @@ def read_data(tile, ind):
             ds[m] = xr.open_mfdataset(f'data/sgrids_{ind}/{m}/{tile}', engine='zarr').rename({'sg':m})[m]
         return ds
     except: 
-        return None
+        return [None, None, None, None]
     
     
 @st.cache_data # _resource  # No need for TTL this time. It's static data :)
