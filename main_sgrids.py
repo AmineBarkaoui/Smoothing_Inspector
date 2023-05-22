@@ -39,7 +39,6 @@ def plot_main_altair(df):
 def plot_main_plt(tile, index):
 
     ds = read_data(tile, index) 
-    print(ds)
 
     fig, axs = plt.subplots(2, 2, sharex=True, sharey=True)
 
@@ -65,7 +64,7 @@ def read_data(tile, ind):
             ds[m] = xr.open_mfdataset(f'data/sgrids_{ind}/{m}/{tile}', engine='zarr').rename({'sg':m})[m]
         return ds
     except: 
-        return [None, None, None, None]
+        return dict(zip(METHODS, [None, None, None, None]))
     
     
 @st.cache_data # _resource  # No need for TTL this time. It's static data :)
