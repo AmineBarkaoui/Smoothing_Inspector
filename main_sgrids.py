@@ -68,7 +68,7 @@ def read_data(tile, ind):
 @st.cache_data # _resource  # No need for TTL this time. It's static data :)
 def get_data_by_state():
     tiles = glob.glob('data/sgrids_ndvi/pwcv_basic/*')
-    tiles = sorted([p.split('\\')[-1] for p in tiles])
+    tiles = sorted([p.split('/')[-1] for p in tiles])
 
     ndvi_tiles = dict(zip(tiles, [read_data(tile, 'ndvi') for tile in tiles]))
     #tda_tiles = dict(zip(tiles, [read_data(tile, 'tda') for tile in tiles]))
@@ -101,7 +101,7 @@ def main():
     with st.sidebar:
         
         st.title("S grids inspector") 
-        
+
         tile = st.selectbox('Tile', tiles)
 	    
         st.markdown('------------')
