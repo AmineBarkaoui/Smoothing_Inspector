@@ -39,6 +39,7 @@ def plot_main_altair(df):
 def plot_main_plt(tile, index):
 
     ds = read_data(tile, index) 
+    print(ds)
 
     fig, axs = plt.subplots(2, 2, sharex=True, sharey=True)
 
