@@ -44,7 +44,8 @@ def plot_main_plt(tile, index):
     fig, axs = plt.subplots(2, 2, sharex=True, sharey=True)
 
     for i,j in product(range(2), range(2)):
-        im = ds[METHODS[2 * i + j]].plot.imshow(ax=axs[i,j], vmin=-4, vmax=4, add_colorbar=False,)
+        da = ds[METHODS[2 * i + j]].
+        im = da.plot.imshow(ax=axs[i,j], vmin=-4, vmax=4, add_colorbar=False,)
         axs[i,j].set_title(TITLES[METHODS[2 * i + j]])
         axs[i,j].set_xlabel('', fontsize=0)
         axs[i,j].set_ylabel('', fontsize=0)
