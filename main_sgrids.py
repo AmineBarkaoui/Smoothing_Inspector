@@ -44,11 +44,14 @@ def plot_main_plt(tile, index):
 
     for i,j in product(range(2), range(2)):
         da = ds[METHODS[2 * i + j]]
-        if da is not None:
-            im = da.plot.imshow(ax=axs[i,j], vmin=-4, vmax=4, add_colorbar=False,)
-            axs[i,j].set_title(TITLES[METHODS[2 * i + j]])
-            axs[i,j].set_xlabel('', fontsize=0)
-            axs[i,j].set_ylabel('', fontsize=0)
+        if da is None:
+            plt.figure()
+            plt.show()
+            return
+        im = da.plot.imshow(ax=axs[i,j], vmin=-4, vmax=4, add_colorbar=False,)
+        axs[i,j].set_title(TITLES[METHODS[2 * i + j]])
+        axs[i,j].set_xlabel('', fontsize=0)
+        axs[i,j].set_ylabel('', fontsize=0)
 
     fig.subplots_adjust(right=0.875) #also try using kwargs bottom, top, or hspace 
     cbar_ax = fig.add_axes([0.1, -0.1, .8, .05]) #left, bottom, width, height
