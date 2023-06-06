@@ -319,7 +319,7 @@ def main():
         srange = np.arange(sr[0], sr[1], 0.2, dtype=np.float64)
 
     if not(map): 
-        smoothed = smooth(da, vcurve, wcv, robust, pval_wcv, pval_vc, srange, nodata, choose)
+        smoothed = smooth(da, vcurve, wcv, robust, pval_vc, pval_wcv, srange, nodata, choose)
 
         print("--- %s seconds SMOOTH---" % (time.time() - start_time))
     
