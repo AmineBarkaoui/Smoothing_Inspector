@@ -309,7 +309,7 @@ def main():
             da = da.assign_coords(latitude=('time', df['Latitude']))
         else:
             nodata = 0.
-            da = xr.DataArray(np.array(df['LST'])*50, dims = ['time', 'longitude', 'latitude'], coords = dict(time = df['Date']))
+            da = xr.DataArray(np.array(df['LST'])*50, dims = ['time'], coords = dict(time = df['Date']))
             da = da.assign_coords(longitude=('time', df['Longitude']))
             da = da.assign_coords(latitude=('time', df['Latitude']))
         
