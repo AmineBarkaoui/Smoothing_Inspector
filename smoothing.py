@@ -9,7 +9,7 @@ import seasmon_xr
 from garcia_fns import *
 
 
-def smooth(da, vcurve, garcia, wcv, robust, p_v, p_wcv, srange=None, nodata = -3000., choose='NDVI'):
+def smooth(da, vcurve, wcv, robust, p_v, p_wcv, srange=None, nodata = -3000., choose='NDVI'):
     
     ds = da.to_dataset(name='band')
     
@@ -32,21 +32,21 @@ def smooth(da, vcurve, garcia, wcv, robust, p_v, p_wcv, srange=None, nodata = -3
         ds['smoothed_wcv'] = ds_smoothed_wcv.band
         ds['Sopts_wcv'] = ds_smoothed_wcv.sgrid
         
-    if garcia:
-        # Reformat the Data
-        z = da.to_dataset(name='band')
-        
-        # Clean the dataset
-        z['band_n'] = replace_bad(z.band, choose)
-  
-        g_smooth_rens = Garcia_smoothing_complete(z.band_n.values.astype(np.float32),
-                                                  fit_robust=robust,
-                                                  fit_envelope=(p_wcv!=None),
-                                                  neg_residuals_only=True,
-                                                  Sopt_Rog=True,
-                                                  Sopt_range=srange)
-        ds['smoothed_g'] = np.int16(g_smooth_rens[0])
-        ds['Sopts_g'] = np.int16(g_smooth_rens[1][-1,1])
+    #if garcia:
+    #    # Reformat the Data
+    #    z = da.to_dataset(name='band')
+    #    
+    #    # Clean the dataset
+    #    z['band_n'] = replace_bad(z.band, choose)
+    #
+    #    g_smooth_rens = Garcia_smoothing_complete(z.band_n.values.astype(np.float32),
+    #                                              fit_robust=robust,
+    #                                              fit_envelope=(p_wcv!=None),
+    #                                              neg_residuals_only=True,
+    #                                              Sopt_Rog=True,
+    #                                              Sopt_range=srange)
+    #    ds['smoothed_g'] = np.int16(g_smooth_rens[0])
+    #    ds['Sopts_g'] = np.int16(g_smooth_rens[1][-1,1])
         
         
     return ds
