@@ -10,4 +10,6 @@ xarray
 zarr
 streamlit_option_menu
 geopandas
+contextily
+shapely
 matplotlib
