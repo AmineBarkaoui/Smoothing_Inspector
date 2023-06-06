@@ -180,7 +180,7 @@ def read_data(product_type):
         ]
     else:
         product_MXD = read_lst()
-        grid_sample = xr.open_zarr('data/tda_zarr')
+        grid_sample = xr.open_zarr('data/tda_zarr').load()
         names_grid_sample = [
             f"grid({str(round(lat)).zfill(2)},{str(round(lon)).zfill(2)})" 
             for lat, lon in product(grid_sample.latitude.values, grid_sample.longitude.values)

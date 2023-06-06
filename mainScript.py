@@ -61,10 +61,10 @@ def plot_main(smoothed, methods, choose):
       y=alt.Y('value')
       )
         
-    main_layers = alt.layer(chart1, chart2).add_selection(brush).properties(width=800)
+    main_layers = alt.layer(chart1, chart2).add_selection(brush).properties(width=750)
     #.configure_area(tooltip = True)#.interactive()
 
-    subset_layers = alt.layer(chart1, chart2).encode(x=alt.X(scale={'domain':brush.ref()})).properties(width=800)
+    subset_layers = alt.layer(chart1, chart2).encode(x=alt.X(scale={'domain':brush.ref()})).properties(width=750)
     
     layers = alt.vconcat(main_layers, subset_layers)
     
