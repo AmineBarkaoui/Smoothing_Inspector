@@ -6,11 +6,14 @@ import xarray as xr
 import pandas as pd
 import altair as alt
 import streamlit as st
+import geopandas as gpd
+import contextily as cx
+import matplotlib.pyplot as plt
 from streamlit_option_menu import option_menu
 
 from read_data import read_data
 from smoothing import smooth
-
+from shapely.geometry import Point
     
 
 def plot_main(smoothed, methods, choose):
@@ -22,7 +25,7 @@ def plot_main(smoothed, methods, choose):
         coeff = 0.02 ; offset = -273.15
         
     # Create DataFrame
-    names = ['smoothed_v', 'smoothed_g', 'smoothed_wcv']
+    names = ['smoothed_v', 'smoothed_wcv'] # 'smoothed_g'
     df = pd.DataFrame(index = smoothed.time.values) 
     df.index.name = 'time'     
     for i,sm in enumerate(methods.keys()):   
@@ -40,8 +43,8 @@ def plot_main(smoothed, methods, choose):
     dfraw = dfraw.melt('time', var_name='name', value_name='value')
     
     valid = list(methods.values())
-    names = np.array(['vcurve', 'garcia', 'wcv'])[valid].tolist()
-    colors = np.array(['red', 'blue', 'green'])[valid].tolist()
+    names = np.array(['vcurve', 'wcv'])[valid].tolist() # 'garcia', 
+    colors = np.array(['red', 'green'])[valid].tolist() # 'blue',
     
     chart1 = alt.Chart(df, height=400).mark_line(opacity=0.8, size = 1).encode(
       x=alt.X('time'),
@@ -70,7 +73,7 @@ def plot_lta(smoothed, methods, col, choose):
         coeff = 0.02 ; offset = -273.15
     
     # Create DataFrame
-    names = ['smoothed_v', 'smoothed_g', 'smoothed_wcv']
+    names = ['smoothed_v', 'smoothed_wcv']
     df = pd.DataFrame(index = np.arange(1,13,1))
     df.index.name = 'month'     
     for i,sm in enumerate(methods.keys()):  
@@ -113,8 +116,8 @@ def plot_lta(smoothed, methods, col, choose):
     dfstd['upper'] = dfraw['value']+dfstd['value']
 
     valid = list(methods.values())
-    names = np.array(['vcurve', 'garcia', 'wcv'])[valid].tolist()
-    colors = np.array(['red', 'blue', 'green'])[valid].tolist()
+    names = np.array(['vcurve', 'wcv'])[valid].tolist()
+    colors = np.array(['red', 'green'])[valid].tolist()
     
     chart1 = alt.Chart(df).mark_line(opacity=0.8, size = 1).encode(
       x=alt.X('month'),
@@ -166,21 +169,37 @@ def plot_vcurve(smoothed, methods, srange, col):
     col.altair_chart(chart, use_container_width=False)
 
 
+def plot_location(da):
+    
+    # Create DataFrame
+    df = da.to_dataframe(name='raw').reset_index().loc[:2]
+    gdf = gpd.GeoDataFrame(df, geometry=gpd.points_from_xy(df.longitude, df.latitude), crs="EPSG:4326")
+
+    margin = 20
+    extent = (gdf.longitude[0] - margin, gdf.longitude[0] + margin, gdf.latitude[0] - margin, gdf.latitude[0] + margin) 
+    chart = gdf.plot()
+    chart.axis(extent)
+    plt.axis('off')
+    cx.add_basemap(chart, source=cx.providers.OpenStreetMap.Mapnik, crs=gdf.crs)
+
+    st.pyplot(chart.figure)
+
+
 def print_sopt(smoothed, methods, col):
 
     with col:
-    	if methods['vcurve']:
-    		st.write('Sopt Vcurve: ', str(smoothed['Sopts_v'].values))
-    	if methods['garcia']:
-    		st.write('Sopt Garcia: ', str(smoothed['Sopts_g'].values))
-    	if methods['wcv']:
-    	    st.write('Sopt WCV: ', str(smoothed['Sopts_wcv'].values))
+        if methods['vcurve']:
+            st.write('Sopt Vcurve: ', str(smoothed['Sopts_v'].values))
+        #if methods['garcia']:
+        #    st.write('Sopt Garcia: ', str(smoothed['Sopts_g'].values))
+        if methods['wcv']:
+            st.write('Sopt WCV: ', str(smoothed['Sopts_wcv'].values))
 
 
 @st.cache  # No need for TTL this time. It's static data :)
 def get_data_by_state(choose):
-    product_MXD = read_data(choose)    
-    return product_MXD
+    product_MXD, names_grid_sample = read_data(choose)    
+    return product_MXD, names_grid_sample
     
 def main():
 
@@ -206,9 +225,9 @@ def main():
 #    Data 
 # =============================================================================
         
-    product_MXD = get_data_by_state(choose)
+    product_MXD, names_grid_sample = get_data_by_state(choose)
         
-    loc_list = list(set(product_MXD.index.values))
+    loc_list = [*names_grid_sample, *np.unique(product_MXD.index.values)]
     loc_list.sort()
     
 # =============================================================================
@@ -218,47 +237,49 @@ def main():
     with st.sidebar:
         
         loc = st.selectbox('Location', loc_list)
+
+        map = wcv = st.checkbox('Show point on map',value=False)
+
+        st.markdown('------------')
+        
+        vcurve = st.checkbox('V-curve',value=True)
+        #garcia = st.checkbox('Garcia',value=True)
+        wcv = st.checkbox('WCV',value=True)
+        methods = dict(vcurve = vcurve, wcv = wcv) # garcia = garcia,
         
         st.markdown('------------')
-	    
-        vcurve = st.checkbox('V-curve',value=True)
-        garcia = st.checkbox('Garcia',value=True)
-        wcv = st.checkbox('WCV',value=True)
-        methods = dict(vcurve = vcurve, garcia = garcia, wcv = wcv)       
-	    
-        st.markdown('------------')
-	    
+        
         bound = st.checkbox('Set bounds to Sopt',value=False)
         if bound:
-	        sr = st.slider('S range',-2., 4.2,(-2., 4.2))
+            sr = st.slider('S range',-2., 4.2,(-2., 4.2))
         else: 
-	        sr = None
-	    
+            sr = None
+        
         st.markdown('------------')
-	    
+        
         robust = st.checkbox('Use robust weights',value=True)
-	    
+        
         st.markdown('------------')
-	    
+        
         expec = st.checkbox('Set a p value',value=True)
         if expec:
-	        pval_wcv = st.select_slider('Select a p value for the WCV',
-	                                options=[0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.],
-	                                value = 0.8)
-	        if choose == 'NDVI':
-                 # p at 0.9 by default for the V-curve on NDVI
-                 pval_vc = st.select_slider('Select a p value for the V-curve',
-	                                options=[0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.],
-	                                value = 0.9)
-	        else:
-                 # p at 0.8 by default for the V-curve on LST
-                 pval_vc = st.select_slider('Select a p value for the V-curve',
-	                                options=[0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.],
-	                                value = 0.8)
+            pval_wcv = st.select_slider('Select a p value for the WCV',
+                                    options=[0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.],
+                                    value = 0.8)
+            if choose == 'NDVI':
+                    # p at 0.9 by default for the V-curve on NDVI
+                    pval_vc = st.select_slider('Select a p value for the V-curve',
+                                    options=[0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.],
+                                    value = 0.9)
+            else:
+                    # p at 0.8 by default for the V-curve on LST
+                    pval_vc = st.select_slider('Select a p value for the V-curve',
+                                    options=[0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.],
+                                    value = 0.8)
                 
         else:
-	        pval_wcv = None
-	        pval_vc = None
+            pval_wcv = None
+            pval_vc = None
             
 # =============================================================================
 #   Smoothing
@@ -266,49 +287,74 @@ def main():
     
     start_time = time.time()
     
-    df = product_MXD.loc[loc]
-       
-    if choose == 'NDVI':
-        nodata = -3000.
-        da = xr.DataArray(np.array(df['NDVI'])*10000, dims = ['time'], coords = dict(time = df['Date']))
+    if loc in names_grid_sample:
+
+        translate_product = dict(NDVI = 'vim', LST = 'tda')
+        da = xr.open_zarr(f'data/{translate_product[choose]}_zarr').band.load()
+
+        lat = int(loc.split(',')[0].split('(')[-1])
+        lon = int(loc.split(',')[-1].split(')')[0])
+
+        da = da.sel(latitude = lat, longitude = lon, method = 'nearest')
+        nodata = da.nodata
+
     else:
-        nodata = 0.
-        da = xr.DataArray(np.array(df['LST'])*50, dims = ['time'], coords = dict(time = df['Date']))
-    
+
+        df = product_MXD.loc[loc]
+        
+        if choose == 'NDVI':
+            nodata = -3000.
+            da = xr.DataArray(np.array(df['NDVI'])*10000, dims = ['time'], coords = dict(time=df['Date']))
+            da = da.assign_coords(longitude=('time', df['Longitude']))
+            da = da.assign_coords(latitude=('time', df['Latitude']))
+        else:
+            nodata = 0.
+            da = xr.DataArray(np.array(df['LST'])*50, dims = ['time', 'longitude', 'latitude'], coords = dict(time = df['Date']))
+            da = da.assign_coords(longitude=('time', df['Longitude']))
+            da = da.assign_coords(latitude=('time', df['Latitude']))
+        
     if sr==None:
         srange = np.arange(-2, 4.2, 0.2, dtype=np.float64)
     else:
         srange = np.arange(sr[0], sr[1], 0.2, dtype=np.float64)
-        
-    smoothed = smooth(da, vcurve, garcia, wcv, robust, pval_wcv, pval_vc, srange, nodata, choose)
-        
-    print("--- %s seconds SMOOTH---" % (time.time() - start_time))
+
+    if not(map): 
+        smoothed = smooth(da, vcurve, wcv, robust, pval_wcv, pval_vc, srange, nodata, choose)
+
+        print("--- %s seconds SMOOTH---" % (time.time() - start_time))
     
 # =============================================================================
 #   Main plot
 # =============================================================================
     
-    plot_main(smoothed, methods, choose)
+        plot_main(smoothed, methods, choose)
     
 # =============================================================================
 #   Long Term Average
 # =============================================================================
-    col1, col2 = st.columns([40, 40]) 
+        col1, col2 = st.columns([40, 40]) 
     
-    plot_lta(smoothed, methods, col1, choose)
+        plot_lta(smoothed, methods, col1, choose)
     
 # =============================================================================
 #   Print Sopts
 # =============================================================================
     
-    print_sopt(smoothed, methods, col1)
+        print_sopt(smoothed, methods, col1)
     
 # =============================================================================
 #   V-curve plot
 # =============================================================================
     
-    if vcurve:
-        plot_vcurve(smoothed, methods, srange, col2)
+        if vcurve:
+            plot_vcurve(smoothed, methods, srange, col2)
+
+# =============================================================================
+#   Location plot
+# =============================================================================
+    
+    if map: 
+        plot_location(da)
 
 
 if __name__ == "__main__":
