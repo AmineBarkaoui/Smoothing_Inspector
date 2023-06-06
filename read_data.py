@@ -172,10 +172,11 @@ def read_data(product_type):
     
     if product_type == 'NDVI':
         product_MXD = read_ndvi()
-        grid_sample = xr.open_zarr('data/vim_zarr')
+        grid_sample = xr.open_zarr('data/vim_zarr').load()
         names_grid_sample = [
             f"grid({str(round(lat)).zfill(2)},{str(round(lon)).zfill(2)})" 
             for lat, lon in product(grid_sample.latitude.values, grid_sample.longitude.values)
+            if grid_sample.band.sel(latitude=lat, longitude=lon).mean(dim='time').values != grid_sample.band.nodata
         ]
     else:
         product_MXD = read_lst()
@@ -183,6 +184,7 @@ def read_data(product_type):
         names_grid_sample = [
             f"grid({str(round(lat)).zfill(2)},{str(round(lon)).zfill(2)})" 
             for lat, lon in product(grid_sample.latitude.values, grid_sample.longitude.values)
+            if grid_sample.band.sel(latitude=lat, longitude=lon).mean(dim='time').values != grid_sample.band.nodata
         ]
         
     return product_MXD, names_grid_sample

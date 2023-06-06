@@ -46,20 +46,27 @@ def plot_main(smoothed, methods, choose):
     names = np.array(['vcurve', 'wcv'])[valid].tolist() # 'garcia', 
     colors = np.array(['red', 'green'])[valid].tolist() # 'blue',
     
+    brush = alt.selection_interval()
+
     chart1 = alt.Chart(df, height=400).mark_line(opacity=0.8, size = 1).encode(
-      x=alt.X('time'),
-      y=alt.Y('value'),
-      color=alt.Color('name', scale=alt.Scale(
+        x=alt.X('time'),
+        y=alt.Y('value'),
+        color=alt.Color('name', scale=alt.Scale(
             domain=names,
             range=colors))
-      ).properties(title="Smoothing")
+        )
       
     chart2 = alt.Chart(dfraw, height=400).mark_line(color = 'grey', opacity=0.6, size = 1, point=alt.OverlayMarkDef(opacity = 0.6, size = 10)).encode(
       x=alt.X('time'),
       y=alt.Y('value')
-      ).properties(title="Smoothing")
+      )
+        
+    main_layers = alt.layer(chart1, chart2).add_selection(brush).properties(width=800)
+    #.configure_area(tooltip = True)#.interactive()
+
+    subset_layers = alt.layer(chart1, chart2).encode(x=alt.X(scale={'domain':brush.ref()})).properties(width=800)
     
-    layers = alt.layer(chart1, chart2).configure_area(tooltip = True).interactive()
+    layers = alt.vconcat(main_layers, subset_layers)
     
     st.altair_chart(layers, use_container_width=True)
     
@@ -139,7 +146,8 @@ def plot_lta(smoothed, methods, col, choose):
       ).properties()
     
     layers = alt.layer(chart3, chart1, chart2).configure_area(tooltip = True).interactive()
-    
+    layers.layer[0].encoding.y.title = f'{choose} average'
+
     col.altair_chart(layers, use_container_width=True)
     
 
@@ -157,7 +165,7 @@ def plot_vcurve(smoothed, methods, srange, col):
 
     chart = alt.Chart(df).mark_line(opacity=0.6).encode(
       x=alt.X('Sopt'),
-      y=alt.Y('value')
+      y=alt.Y('value', axis=alt.Axis(title='V'))
       ).properties(title="V curve")
     
 
@@ -187,13 +195,56 @@ def plot_location(da):
 
 def print_sopt(smoothed, methods, col):
 
+    df = pd.DataFrame()
+    indexes = []
+
     with col:
         if methods['vcurve']:
-            st.write('Sopt Vcurve: ', str(smoothed['Sopts_v'].values))
-        #if methods['garcia']:
-        #    st.write('Sopt Garcia: ', str(smoothed['Sopts_g'].values))
+            data = pd.DataFrame({"Selected Sopt": [str(smoothed['Sopts_v'].values)]})
+            df = pd.concat([df, data])
+            indexes.append('Vcurve')
         if methods['wcv']:
-            st.write('Sopt WCV: ', str(smoothed['Sopts_wcv'].values))
+            data = pd.DataFrame({"Selected Sopt": [str(smoothed['Sopts_wcv'].values)]})
+            df = pd.concat([df, data])
+            indexes.append('WCV')
+    df.index = indexes
+    col.table(df)
+
+
+def print_rmse(smoothed, choose, methods, col):
+
+    def rmse(da1, da2):
+        rmse = (((da1 - da2) ** 2).sum('time') / da1.time.size) ** (1/2)
+        rmse_masked = rmse.where(~da2.isel(time=0).isnull(), np.nan)
+        return float(rmse_masked.values)
+    
+    if choose == 'NDVI':
+        coeff = 0.0001 ; offset = 0.
+    else:
+        coeff = 0.02 ; offset = -273.15
+
+    df = pd.DataFrame()
+    indexes = []
+
+    with col:
+        if methods['vcurve']:
+            data = pd.DataFrame({"RMSE": [str(round(rmse(
+                smoothed['smoothed_v'] * coeff + offset, 
+                smoothed['band'] * coeff + offset,
+            ), 5))]})
+            df = pd.concat([df, data])
+            indexes.append('Vcurve')
+        if methods['wcv']:
+            data = pd.DataFrame({"RMSE": [str(round(rmse(
+                smoothed['smoothed_wcv'] * coeff + offset, 
+                smoothed['band'] * coeff + offset,
+            ), 5))]})
+            df = pd.concat([df, data])
+            indexes.append('WCV')
+
+    df.index = indexes
+    col.table(df)
+    
 
 
 @st.cache  # No need for TTL this time. It's static data :)
@@ -201,6 +252,7 @@ def get_data_by_state(choose):
     product_MXD, names_grid_sample = read_data(choose)    
     return product_MXD, names_grid_sample
     
+
 def main():
 
 # =============================================================================
@@ -340,7 +392,7 @@ def main():
 #   Print Sopts
 # =============================================================================
     
-        print_sopt(smoothed, methods, col1)
+        print_sopt(smoothed, methods, col1) 
     
 # =============================================================================
 #   V-curve plot
@@ -348,6 +400,12 @@ def main():
     
         if vcurve:
             plot_vcurve(smoothed, methods, srange, col2)
+
+# =============================================================================
+#   Print RMSE
+# =============================================================================
+    
+        print_rmse(smoothed, choose, methods, col2) 
 
 # =============================================================================
 #   Location plot
