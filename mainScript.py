@@ -46,7 +46,7 @@ def plot_main(smoothed, methods, choose):
     names = np.array(['vcurve', 'wcv'])[valid].tolist() # 'garcia', 
     colors = np.array(['red', 'green'])[valid].tolist() # 'blue',
     
-    brush = alt.selection_interval()
+    brush = alt.selection_interval(encodings=['x'])
 
     chart1 = alt.Chart(df, height=400).mark_line(opacity=0.8, size = 1).encode(
         x=alt.X('time'),
@@ -61,12 +61,12 @@ def plot_main(smoothed, methods, choose):
       y=alt.Y('value')
       )
         
-    main_layers = alt.layer(chart1, chart2).add_selection(brush).properties(width=750)
+    main_layers = alt.layer(chart1, chart2).add_selection(brush).properties(width=750, title='Select an interval to zoom in')
     #.configure_area(tooltip = True)#.interactive()
 
     subset_layers = alt.layer(chart1, chart2).encode(x=alt.X(scale={'domain':brush.ref()})).properties(width=750)
     
-    layers = alt.vconcat(main_layers, subset_layers)
+    layers = alt.vconcat(main_layers, subset_layers).configure_title(anchor='start')
     
     st.altair_chart(layers, use_container_width=True)
     
