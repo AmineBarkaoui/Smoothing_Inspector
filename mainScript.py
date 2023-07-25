@@ -127,7 +127,7 @@ def plot_lta(smoothed, methods, col, choose):
     names = np.array(['vcurve', 'wcv'])[valid].tolist()
     colors = np.array(['red', 'green'])[valid].tolist()
     
-    chart1 = alt.Chart(df).mark_line(opacity=0.8, size = 1).encode(
+    chart1 = alt.Chart(df).mark_line(opacity=0.8, size = 3).encode(
       x=alt.X('month'),
       y=alt.Y('value'),
       color=alt.Color('name', scale=alt.Scale(
@@ -135,7 +135,7 @@ def plot_lta(smoothed, methods, col, choose):
             range=colors))
       ).properties(title="Long Term Average")
       
-    chart2 = alt.Chart(dfraw).mark_line(color = 'grey', opacity=0.6, size = 1, point=alt.OverlayMarkDef(opacity = 0.6, size = 10)).encode(
+    chart2 = alt.Chart(dfraw).mark_line(color = 'grey', opacity=0.6, size = 3, point=alt.OverlayMarkDef(opacity = 0.6, size = 10)).encode(
       x=alt.X('month'),
       y=alt.Y('value')
       ).properties(title="Long Term Average")
