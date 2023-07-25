@@ -16,7 +16,7 @@ from smoothing import smooth
 from shapely.geometry import Point
     
 
-def plot_main(smoothed, methods, choose):
+def plot_main(smoothed, methods, choose, nodata):
     
     # Set scalling factors
     if choose == 'NDVI':
@@ -41,6 +41,7 @@ def plot_main(smoothed, methods, choose):
     dfraw.index.name = 'time'
     dfraw = dfraw.reset_index()
     dfraw = dfraw.melt('time', var_name='name', value_name='value')
+    dfraw[dfraw.value == nodata] = np.nan
     
     valid = list(methods.values())
     names = np.array(['vcurve', 'wcv'])[valid].tolist() # 'garcia', 
@@ -454,7 +455,7 @@ def main():
 #   Main plot
 # =============================================================================
     
-        plot_main(smoothed, methods, choose)
+        plot_main(smoothed, methods, choose, nodata)
     
 # =============================================================================
 #   Long Term Average
