@@ -48,7 +48,7 @@ def plot_main(smoothed, methods, choose):
     
     brush = alt.selection_interval(encodings=['x'])
 
-    chart1 = alt.Chart(df, height=400).mark_line(opacity=0.8, size = 1).encode(
+    chart1 = alt.Chart(df).mark_line(opacity=0.8, size = 1).encode(
         x=alt.X('time'),
         y=alt.Y('value'),
         color=alt.Color('name', scale=alt.Scale(
@@ -56,12 +56,12 @@ def plot_main(smoothed, methods, choose):
             range=colors))
         )
       
-    chart2 = alt.Chart(dfraw, height=400).mark_line(color = 'grey', opacity=0.6, size = 1, point=alt.OverlayMarkDef(opacity = 0.6, size = 10)).encode(
+    chart2 = alt.Chart(dfraw).mark_line(color = 'grey', opacity=0.6, size = 1, point=alt.OverlayMarkDef(opacity = 0.6, size = 10)).encode(
       x=alt.X('time'),
       y=alt.Y('value')
       )
         
-    main_layers = alt.layer(chart1, chart2).add_selection(brush).properties(width=750, title='Select an interval to zoom in')
+    main_layers = alt.layer(chart1, chart2).add_selection(brush).properties(width=750, height=20, title='Select an interval to zoom in')
     #.configure_area(tooltip = True)#.interactive()
 
     subset_layers = alt.layer(chart1, chart2).encode(x=alt.X(scale={'domain':brush.ref()})).properties(width=750)
@@ -150,6 +150,74 @@ def plot_lta(smoothed, methods, col, choose):
 
     col.altair_chart(layers, use_container_width=True)
     
+
+def plot_year(smoothed, methods, col, choose, year, start_month):
+    
+    leng = len(smoothed.sel(time=pd.to_datetime(smoothed.time.values).year == year).time)
+
+    # Set scalling factors
+    if choose == 'NDVI':
+        coeff = 0.0001 ; offset = 0.
+    else:
+        coeff = 0.02 ; offset = -273.15
+    
+    # Create DataFrame
+    names = ['smoothed_v', 'smoothed_wcv']
+    df = pd.DataFrame() #(index = np.arange(1,leng+1,1))
+    df.index.name = 'month'     
+    for i,sm in enumerate(methods.keys()):  
+        if methods[sm]:
+            da = xr.DataArray(smoothed[names[i]], dims = ['time'], 
+              coords = dict(time = pd.to_datetime(smoothed.time.values)))
+            day = da.where(da.time.dt.year >= year, drop=True)
+            day = day.where(day.time.dt.month >= start_month, drop=True)
+            day = day.isel(time=slice(0, leng))
+            df[sm] = day.values * coeff + offset
+    df = df.reset_index()
+    df.month = day.time.values
+    df = df.melt('month', var_name='name', value_name='value')
+       
+    raw = xr.DataArray(smoothed['band'], dims = ['time'], 
+                      coords = dict(time = pd.to_datetime(smoothed.time.values)))
+    if choose == 'NDVI':
+        nodata = -3000.
+    else:
+        nodata = 0.
+    raw = raw.where(raw!=nodata)
+    rawy = raw.where(raw.time.dt.year >= year, drop=True)
+    rawy = rawy.where(rawy.time.dt.month >= start_month, drop=True)
+    rawy = rawy.isel(time=slice(0, leng))
+    
+    dfraw = pd.DataFrame(index = rawy.time.values) 
+    rawy = rawy.values*coeff + offset
+    if choose == 'LST': rawy = np.maximum(rawy,0) 
+    dfraw['raw'] = rawy
+    dfraw.index.name = 'month'
+    dfraw = dfraw.reset_index()
+    dfraw = dfraw.melt('month', var_name='name', value_name='value')
+  
+    valid = list(methods.values())
+    names = np.array(['vcurve', 'wcv'])[valid].tolist()
+    colors = np.array(['red', 'green'])[valid].tolist()
+
+    chart1 = alt.Chart(df).mark_line(opacity=0.8, size = 1).encode(
+      x=alt.X('month'),
+      y=alt.Y('value'),
+      color=alt.Color('name', scale=alt.Scale(
+            domain=names,
+            range=colors))
+      ).properties(title=f"{choose} - {start_month}/{year} to {start_month}/{year+1}")
+      
+    chart2 = alt.Chart(dfraw).mark_line(color = 'grey', opacity=0.6, size = 1, point=alt.OverlayMarkDef(opacity = 0.6, size = 10)).encode(
+      x=alt.X('month'),
+      y=alt.Y('value')
+      ).properties(title=f"{choose} - {start_month}/{year} to {start_month}/{year+1}")
+    
+    layers = alt.layer(chart1, chart2).configure_area(tooltip = True).interactive()
+    layers.layer[0].encoding.y.title = f'{choose} year'
+
+    col.altair_chart(layers, use_container_width=True)
+
 
 def plot_vcurve(smoothed, methods, srange, col):
     
@@ -261,9 +329,9 @@ def main():
     
     st.set_page_config(layout='wide')
 
-    choose = option_menu("Choose index", ["NDVI", "LST"],
+    choose = option_menu(None, ["NDVI", "LST"],
                          icons=['tree','thermometer-half'],
-                         menu_icon="app-indicator", default_index=0,
+                         #menu_icon="app-indicator", default_index=0,
                          orientation='horizontal',
                          styles={
         "container": {"padding": "5!important", "background-color": "#fafafa"},
@@ -300,6 +368,13 @@ def main():
         methods = dict(vcurve = vcurve, wcv = wcv) # garcia = garcia,
         
         st.markdown('------------')
+
+        year = st.slider('Year', 2002, 2022, 2015)
+        
+        start_month = st.slider('Starting month', 1, 12, 1)
+
+        st.markdown('------------')
+        
         
         bound = st.checkbox('Set bounds to Sopt',value=False)
         if bound:
@@ -309,7 +384,7 @@ def main():
         
         st.markdown('------------')
         
-        robust = st.checkbox('Use robust weights',value=True)
+        robust = st.checkbox('Use robust weights',value=False)
         
         st.markdown('------------')
         
@@ -398,8 +473,9 @@ def main():
 #   V-curve plot
 # =============================================================================
     
-        if vcurve:
-            plot_vcurve(smoothed, methods, srange, col2)
+        #if vcurve:
+            #plot_vcurve(smoothed, methods, srange, col2)
+        plot_year(smoothed, methods, col2, choose, year, start_month)
 
 # =============================================================================
 #   Print RMSE
