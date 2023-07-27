@@ -1,5 +1,5 @@
 import time
-#import datetime
+import datetime
 #import calendar
 import numpy as np
 import xarray as xr
@@ -65,7 +65,7 @@ def plot_main(smoothed, methods, choose, nodata):
     main_layers = alt.layer(chart1, chart2).add_selection(brush).properties(width=750, height=20, title='Select an interval to zoom in')
     #.configure_area(tooltip = True)#.interactive()
 
-    subset_layers = alt.layer(chart1, chart2).encode(x=alt.X(scale={'domain':brush.ref()})).properties(width=750)
+    subset_layers = alt.layer(chart1, chart2).encode(x=alt.X(scale={'domain':brush.ref()}, axis=alt.Axis(format="%b %Y"))).properties(width=750)
     
     layers = alt.vconcat(main_layers, subset_layers).configure_title(anchor='start')
     
@@ -127,21 +127,26 @@ def plot_lta(smoothed, methods, col, choose):
     names = np.array(['vcurve', 'wcv'])[valid].tolist()
     colors = np.array(['red', 'green'])[valid].tolist()
     
+    df['month'] = [datetime.datetime(1990, m, 1) for m in df.month.values]
+    dfraw['month'] = [datetime.datetime(1990, m, 1) for m in dfraw.month.values]
+    dfstd['month'] = [datetime.datetime(1990, m, 1) for m in dfstd.month.values]
+
     chart1 = alt.Chart(df).mark_line(opacity=0.8, size = 3).encode(
-      x=alt.X('month'),
+      x=alt.X('month', axis=alt.Axis(format="%b")),
       y=alt.Y('value'),
       color=alt.Color('name', scale=alt.Scale(
             domain=names,
             range=colors))
-      ).properties(title="Long Term Average")
+      ).properties(title="Long Term Average (w raw curve tooltip)")
       
     chart2 = alt.Chart(dfraw).mark_line(color = 'grey', opacity=0.6, size = 3, point=alt.OverlayMarkDef(opacity = 0.6, size = 10)).encode(
-      x=alt.X('month'),
-      y=alt.Y('value')
-      ).properties(title="Long Term Average")
+      x=alt.X('month', axis=alt.Axis(format="%b")),
+      y=alt.Y('value'),
+      tooltip=['value']
+      ).properties(title="Long Term Average (w raw curve tooltip)")
     
     chart3 = alt.Chart(dfstd).mark_area(color='#17becf',opacity=0.2).encode(
-      x=alt.X('month'),
+      x=alt.X('month', axis=alt.Axis(format="%b")),
       y='lower',
       y2='upper'
       ).properties()
@@ -202,7 +207,7 @@ def plot_year(smoothed, methods, col, choose, year, start_month):
     colors = np.array(['red', 'green'])[valid].tolist()
 
     chart1 = alt.Chart(df).mark_line(opacity=0.8, size = 1).encode(
-      x=alt.X('month'),
+      x=alt.X('month', axis=alt.Axis(format="%b")),
       y=alt.Y('value'),
       color=alt.Color('name', scale=alt.Scale(
             domain=names,
@@ -210,7 +215,7 @@ def plot_year(smoothed, methods, col, choose, year, start_month):
       ).properties(title=f"{choose} - {start_month}/{year} to {start_month}/{year+1}")
       
     chart2 = alt.Chart(dfraw).mark_line(color = 'grey', opacity=0.6, size = 1, point=alt.OverlayMarkDef(opacity = 0.6, size = 10)).encode(
-      x=alt.X('month'),
+      x=alt.X('month', axis=alt.Axis(format="%b")),
       y=alt.Y('value')
       ).properties(title=f"{choose} - {start_month}/{year} to {start_month}/{year+1}")
     
@@ -378,10 +383,13 @@ def main():
         
         
         bound = st.checkbox('Set bounds to Sopt',value=False)
+        ac = None
+        sr = None
         if bound:
-            sr = st.slider('S range',-2., 4.2,(-2., 4.2))
-        else: 
-            sr = None
+            ac = st.checkbox('Use autocorrelation',value=True)
+            if not ac:
+                ac = None
+                sr = st.slider('S range',-2., 4.2,(-2., 4.2))
         
         st.markdown('------------')
         
@@ -447,7 +455,7 @@ def main():
         srange = np.arange(sr[0], sr[1], 0.2, dtype=np.float64)
 
     if not(map): 
-        smoothed = smooth(da, vcurve, wcv, robust, pval_vc, pval_wcv, srange, nodata, choose)
+        smoothed = smooth(da, vcurve, wcv, robust, pval_vc, pval_wcv, srange, ac, nodata, choose)
 
         print("--- %s seconds SMOOTH---" % (time.time() - start_time))
     

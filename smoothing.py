@@ -9,16 +9,29 @@ import seasmon_xr
 from garcia_fns import *
 
 
-def smooth(da, vcurve, wcv, robust, p_v, p_wcv, srange=None, nodata = -3000., choose='NDVI'):
+def smooth(da, vcurve, wcv, robust, p_v, p_wcv, srange=None, ac=None, nodata = -3000., choose='NDVI'):
     
     ds = da.to_dataset(name='band')
-    
+
+    if ac: 
+        lc = da.expand_dims(dim={"x": 1, "y": 1}).hdc.algo.autocorr().squeeze(['x', 'y'])
+    else: 
+        lc = None
+
     if vcurve:
-        if p_v != None:
-            ds_smoothed_v = da.hdc.whit.whitsvc(nodata = nodata, srange = srange, p = p_v)
+        if lc == None:
+            if p_v != None:
+                ds_smoothed_v = da.hdc.whit.whitsvc(nodata = nodata, srange = srange, p = p_v)
+            else:
+                ds_smoothed_v = da.hdc.whit.whitsvc(nodata = nodata, srange = srange)            
         else:
-            ds_smoothed_v = da.hdc.whit.whitsvc(nodata = nodata, srange = srange)            
-        
+            if p_v != None:
+                ds_smoothed_v = da.hdc.whit.whitsvc(nodata = nodata, srange = srange, p = p_v)
+                #ds_smoothed_v = da.hdc.whit.whitsvc(nodata = nodata, lc = lc, p = p_v)
+            else:
+                ds_smoothed_v = da.hdc.whit.whitsvc(nodata = nodata, srange = srange)
+                #ds_smoothed_v = da.hdc.whit.whitsvc(nodata = nodata, lc = lc) 
+
         ds['smoothed_v'] = ds_smoothed_v.band
         ds['Sopts_v'] = ds_smoothed_v.sgrid
         ds['curv'] = ds_smoothed_v.curv
