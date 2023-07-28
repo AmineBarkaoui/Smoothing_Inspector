@@ -322,7 +322,7 @@ def print_rmse(smoothed, choose, methods, col):
     
 
 
-@st.cache  # No need for TTL this time. It's static data :)
+@st.cache_data  # No need for TTL this time. It's static data :)
 def get_data_by_state(choose):
     product_MXD, names_grid_sample = read_data(choose)    
     return product_MXD, names_grid_sample
