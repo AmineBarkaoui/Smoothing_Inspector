@@ -207,7 +207,7 @@ def plot_year(smoothed, methods, col, choose, year, start_month):
     colors = np.array(['red', 'green'])[valid].tolist()
 
     chart1 = alt.Chart(df).mark_line(opacity=0.8, size = 1).encode(
-      x=alt.X('month', axis=alt.Axis(format="%b")),
+      x=alt.X('month:T', axis=alt.Axis(format="%b")),
       y=alt.Y('value'),
       color=alt.Color('name', scale=alt.Scale(
             domain=names,
@@ -215,7 +215,7 @@ def plot_year(smoothed, methods, col, choose, year, start_month):
       ).properties(title=f"{choose} - {start_month}/{year} to {start_month}/{year+1}")
       
     chart2 = alt.Chart(dfraw).mark_line(color = 'grey', opacity=0.6, size = 1, point=alt.OverlayMarkDef(opacity = 0.6, size = 10)).encode(
-      x=alt.X('month', axis=alt.Axis(format="%b")),
+      x=alt.X('month:T', axis=alt.Axis(format="%b")),
       y=alt.Y('value')
       ).properties(title=f"{choose} - {start_month}/{year} to {start_month}/{year+1}")
     
