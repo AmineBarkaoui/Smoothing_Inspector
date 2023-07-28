@@ -15,6 +15,12 @@ def smooth(da, vcurve, wcv, robust, p_v, p_wcv, srange=None, ac=None, nodata = -
 
     if ac: 
         lc = da.expand_dims(dim={"x": 1, "y": 1}).hdc.algo.autocorr().squeeze(['x', 'y'])
+        if float(lc.values) > 0.5:
+            llas = np.arange(-2, 1.2, 0.2, dtype=np.float64)
+        elif lc <= 0.5:
+            llas = np.arange(0, 3.2, 0.2, dtype=np.float64)
+        else:
+            llas = np.arange(-1, 1.2, 0.2, dtype=np.float64)
     else: 
         lc = None
 
@@ -26,15 +32,14 @@ def smooth(da, vcurve, wcv, robust, p_v, p_wcv, srange=None, ac=None, nodata = -
                 ds_smoothed_v = da.hdc.whit.whitsvc(nodata = nodata, srange = srange)            
         else:
             if p_v != None:
-                ds_smoothed_v = da.hdc.whit.whitsvc(nodata = nodata, srange = srange, p = p_v)
-                #ds_smoothed_v = da.hdc.whit.whitsvc(nodata = nodata, lc = lc, p = p_v)
+                ds_smoothed_v = da.hdc.whit.whitsvc(nodata = nodata, lc = llas, p = p_v)
             else:
-                ds_smoothed_v = da.hdc.whit.whitsvc(nodata = nodata, srange = srange)
-                #ds_smoothed_v = da.hdc.whit.whitsvc(nodata = nodata, lc = lc) 
+                ds_smoothed_v = da.hdc.whit.whitsvc(nodata = nodata, lc = llas) 
 
         ds['smoothed_v'] = ds_smoothed_v.band
         ds['Sopts_v'] = ds_smoothed_v.sgrid
         ds['curv'] = ds_smoothed_v.curv
+        ds['lc'] = None if lc is None else float(lc.values)
     
     if wcv:
         if p_wcv != None:

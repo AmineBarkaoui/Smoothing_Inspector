@@ -72,7 +72,7 @@ def plot_main(smoothed, methods, choose, nodata):
     st.altair_chart(layers, use_container_width=True)
     
     
-def plot_lta(smoothed, methods, col, choose):
+def plot_lta(smoothed, methods, col, choose, start_month):
     
     # Set scalling factors
     if choose == 'NDVI':
@@ -127,9 +127,9 @@ def plot_lta(smoothed, methods, col, choose):
     names = np.array(['vcurve', 'wcv'])[valid].tolist()
     colors = np.array(['red', 'green'])[valid].tolist()
     
-    df['month'] = [datetime.datetime(1990, m, 1) for m in df.month.values]
-    dfraw['month'] = [datetime.datetime(1990, m, 1) for m in dfraw.month.values]
-    dfstd['month'] = [datetime.datetime(1990, m, 1) for m in dfstd.month.values]
+    df['month'] = [datetime.datetime(1990, m, 1) if m >= start_month else datetime.datetime(1991, m, 1) for m in df.month.values]
+    dfraw['month'] = [datetime.datetime(1990, m, 1) if m >= start_month else datetime.datetime(1991, m, 1) for m in dfraw.month.values]
+    dfstd['month'] = [datetime.datetime(1990, m, 1) if m >= start_month else datetime.datetime(1991, m, 1) for m in dfstd.month.values]
 
     chart1 = alt.Chart(df).mark_line(opacity=0.8, size = 3).encode(
       x=alt.X('month', axis=alt.Axis(format="%b")),
@@ -177,7 +177,7 @@ def plot_year(smoothed, methods, col, choose, year, start_month):
               coords = dict(time = pd.to_datetime(smoothed.time.values)))
             day = da.where(da.time.dt.year >= year, drop=True)
             day = day.where(day.time.dt.month >= start_month, drop=True)
-            day = day.isel(time=slice(0, leng))
+            day = day.isel(time=slice(0, leng-1))
             df[sm] = day.values * coeff + offset
     df = df.reset_index()
     df.month = day.time.values
@@ -192,7 +192,7 @@ def plot_year(smoothed, methods, col, choose, year, start_month):
     raw = raw.where(raw!=nodata)
     rawy = raw.where(raw.time.dt.year >= year, drop=True)
     rawy = rawy.where(rawy.time.dt.month >= start_month, drop=True)
-    rawy = rawy.isel(time=slice(0, leng))
+    rawy = rawy.isel(time=slice(0, leng-1))
     
     dfraw = pd.DataFrame(index = rawy.time.values) 
     rawy = rawy.values*coeff + offset
@@ -267,7 +267,7 @@ def plot_location(da):
     st.pyplot(chart.figure)
 
 
-def print_sopt(smoothed, methods, col):
+def print_sopt(smoothed, methods, col, ac):
 
     df = pd.DataFrame()
     indexes = []
@@ -275,6 +275,7 @@ def print_sopt(smoothed, methods, col):
     with col:
         if methods['vcurve']:
             data = pd.DataFrame({"Selected Sopt": [str(smoothed['Sopts_v'].values)]})
+            if ac: data['Lag1-corr'] = smoothed['lc'].values
             df = pd.concat([df, data])
             indexes.append('Vcurve')
         if methods['wcv']:
@@ -386,7 +387,7 @@ def main():
         ac = None
         sr = None
         if bound:
-            ac = st.checkbox('Use autocorrelation',value=True)
+            ac = st.checkbox('Use autocorrelation (only V-Curve)',value=True)
             if not ac:
                 ac = None
                 sr = st.slider('S range',-2., 4.2,(-2., 4.2))
@@ -470,13 +471,13 @@ def main():
 # =============================================================================
         col1, col2 = st.columns([40, 40]) 
     
-        plot_lta(smoothed, methods, col1, choose)
+        plot_lta(smoothed, methods, col1, choose, start_month)
     
 # =============================================================================
 #   Print Sopts
 # =============================================================================
     
-        print_sopt(smoothed, methods, col1) 
+        print_sopt(smoothed, methods, col1, ac) 
     
 # =============================================================================
 #   V-curve plot

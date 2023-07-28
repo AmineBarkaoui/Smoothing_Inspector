@@ -348,7 +348,7 @@ class WhittakerSmoother:
     def whitsvc(
         self,
         nodata: Union[int, float],
-        lc: xarray.DataArray = None,
+        lc: np.ndarray = None, #xarray.DataArray = None,
         srange: np.ndarray = None,
         p: float = None,
     ) -> xarray.Dataset:
@@ -377,7 +377,7 @@ class WhittakerSmoother:
                 nodata,
                 p,
                 lc,
-                input_core_dims=[["time"], [], [], []],
+                input_core_dims=[["time"], [], [], ["dim0"]],
                 output_core_dims=[["time"], [], ["dim0"]],
                 dask="parallelized",
                 keep_attrs=True,
