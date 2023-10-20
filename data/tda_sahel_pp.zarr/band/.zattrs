@@ -1,0 +1,12 @@
+{
+    "_ARRAY_DIMENSIONS": [
+        "time",
+        "latitude",
+        "longitude"
+    ],
+    "coordinates": "spatial_ref",
+    "crs": "EPSG:4326",
+    "grid_mapping": "spatial_ref",
+    "nodata": 0,
+    "units": "1"
+}

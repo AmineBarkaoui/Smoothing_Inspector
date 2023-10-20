@@ -3,5 +3,5 @@
         "time"
     ],
     "calendar": "proleptic_gregorian",
-    "units": "days since 2002-07-07T23:59:59.999999"
+    "units": "days since 2002-07-07 23:59:59.999999"
 }

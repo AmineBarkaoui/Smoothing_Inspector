@@ -26,8 +26,8 @@
             "order": "C",
             "shape": [
                 942,
-                14,
-                9
+                16,
+                16
             ],
             "zarr_format": 2
         },
@@ -59,7 +59,7 @@
             "filters": null,
             "order": "C",
             "shape": [
-                14
+                16
             ],
             "zarr_format": 2
         },
@@ -87,7 +87,7 @@
             "filters": null,
             "order": "C",
             "shape": [
-                9
+                16
             ],
             "zarr_format": 2
         },
@@ -139,7 +139,7 @@
                 "time"
             ],
             "calendar": "proleptic_gregorian",
-            "units": "days since 2002-07-07T23:59:59.999999"
+            "units": "days since 2002-07-07 23:59:59.999999"
         }
     },
     "zarr_consolidated_format": 1

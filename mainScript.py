@@ -437,7 +437,7 @@ def main():
     elif loc in names_sahel_sample:
     
         translate_product = dict(NDVI = 'vim', LST = 'tda')
-        da = xr.open_zarr(f'data/{translate_product[choose]}_sahel.zarr').band.load()
+        da = xr.open_zarr(f'data/{translate_product[choose]}_sahel_pp.zarr').band.load()
 
         lat = float(loc.split(',')[0].split('(')[-1])
         lon = float(loc.split(',')[-1].split(')')[0])
