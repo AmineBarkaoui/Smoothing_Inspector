@@ -324,8 +324,8 @@ def print_rmse(smoothed, choose, methods, col):
 
 @st.cache_data  # No need for TTL this time. It's static data :)
 def get_data_by_state(choose):
-    product_MXD, names_grid_sample = read_data(choose)    
-    return product_MXD, names_grid_sample
+    product_MXD, names_grid_sample, names_sahel_sample = read_data(choose)    
+    return product_MXD, names_grid_sample, names_sahel_sample
     
 
 def main():
@@ -352,10 +352,9 @@ def main():
 #    Data 
 # =============================================================================
         
-    product_MXD, names_grid_sample = get_data_by_state(choose)
+    product_MXD, names_grid_sample, names_sahel_sample = get_data_by_state(choose)
         
-    loc_list = [*names_grid_sample, *np.unique(product_MXD.index.values)]
-    loc_list.sort()
+    loc_list = [*names_sahel_sample, *names_grid_sample, *np.unique(product_MXD.index.values)]
     
 # =============================================================================
 #   Widgets inputs  
@@ -363,7 +362,7 @@ def main():
     
     with st.sidebar:
         
-        loc = st.selectbox('Location', loc_list)
+        loc = st.selectbox('Location (lat, lon)', loc_list)
 
         map = wcv = st.checkbox('Show point on map',value=False)
 
@@ -431,6 +430,17 @@ def main():
 
         lat = int(loc.split(',')[0].split('(')[-1])
         lon = int(loc.split(',')[-1].split(')')[0])
+
+        da = da.sel(latitude = lat, longitude = lon, method = 'nearest')
+        nodata = da.nodata
+
+    elif loc in names_sahel_sample:
+    
+        translate_product = dict(NDVI = 'vim', LST = 'tda')
+        da = xr.open_zarr(f'data/{translate_product[choose]}_sahel.zarr').band.load()
+
+        lat = float(loc.split(',')[0].split('(')[-1])
+        lon = float(loc.split(',')[-1].split(')')[0])
 
         da = da.sel(latitude = lat, longitude = lon, method = 'nearest')
         nodata = da.nodata

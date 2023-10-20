@@ -186,5 +186,15 @@ def read_data(product_type):
             for lat, lon in product(grid_sample.latitude.values, grid_sample.longitude.values)
             if grid_sample.band.sel(latitude=lat, longitude=lon).mean(dim='time').values != grid_sample.band.nodata
         ]
-        
-    return product_MXD, names_grid_sample
+    
+    points_sahel = pd.DataFrame({
+        'lon': [2.236, 13.413, -8.813, 25.311, 4.1739, -9.2509, 0.335, 1.045, -0.032, 0.8281, 13.485, 12.69, -4.577, -4.65, -2.938, -4.802], 
+        'lat': [17.1524, 14.697, 14.861, 12.944, 14.4345, 16.5268, 15.784, 14.548, 16.34, 13.0034, 14.029, 13.89, 14.827, 14.376, 16.157, 13.308],
+        'type': ['random', 'random', 'random', 'random', 'random', 'random', 'water', 'water', 'water', 'water', 'wetland', 'wetland', 'wetland', 'wetland', 'wetland', 'wetland']
+    })
+    names_sahel_sample = [
+        f"sahel-{nature}({str(round(lat,1)).zfill(2)},{str(round(lon,1)).zfill(2)})" 
+        for (_, (lon, lat, nature)) in points_sahel.iterrows()
+    ]
+
+    return product_MXD, names_grid_sample, names_sahel_sample
