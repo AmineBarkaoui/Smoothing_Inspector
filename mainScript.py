@@ -16,14 +16,8 @@ from smoothing import smooth
 from shapely.geometry import Point
     
 
-def plot_main(smoothed, methods, choose, nodata):
-    
-    # Set scalling factors
-    if choose == 'NDVI':
-        coeff = 0.0001 ; offset = 0.
-    else:
-        coeff = 0.02 ; offset = -273.15
-        
+def prepare_dataframe(smoothed, methods, choose, nodata, coeff, offset):
+
     # Create DataFrame
     names = ['smoothed_v', 'smoothed_wcv'] # 'smoothed_g'
     df = pd.DataFrame(index = smoothed.time.values) 
@@ -31,17 +25,32 @@ def plot_main(smoothed, methods, choose, nodata):
     for i,sm in enumerate(methods.keys()):   
         if methods[sm]:
             df[sm] = smoothed[names[i]]*coeff + offset
+
+    df_dl = df
+
     df = df.reset_index()
     df = df.melt('time', var_name='name', value_name='value')
     
     dfraw = pd.DataFrame(index = smoothed.time.values) 
     raw = smoothed['band']*coeff + offset
     if choose == 'LST': raw = np.maximum(raw,0) 
+
+    df_dl ['raw'] = raw
     dfraw['raw'] = raw
     dfraw.index.name = 'time'
     dfraw = dfraw.reset_index()
     dfraw = dfraw.melt('time', var_name='name', value_name='value')
     dfraw[dfraw.value == nodata] = np.nan
+
+    if methods['wcv']:
+        df_dl['Sopt_wcv'] = float(smoothed['Sopts_wcv'].values)
+    if methods['vcurve']:
+        df_dl['Sopt_vcurve'] = float(smoothed['Sopts_v'].values)
+
+    return df, dfraw, df_dl
+
+
+def plot_main(df, dfraw, methods):
     
     valid = list(methods.values())
     names = np.array(['vcurve', 'wcv'])[valid].tolist() # 'garcia', 
@@ -469,12 +478,31 @@ def main():
         smoothed = smooth(da, vcurve, wcv, robust, pval_vc, pval_wcv, srange, ac, nodata, choose)
 
         print("--- %s seconds SMOOTH---" % (time.time() - start_time))
-    
+
+# =============================================================================
+#   Prepare data and download
+# =============================================================================
+        
+        # Set scaling factors
+        if choose == 'NDVI':
+            coeff = 0.0001 ; offset = 0.
+        else:
+            coeff = 0.02 ; offset = -273.15
+            
+        df, dfraw, df_dl = prepare_dataframe(smoothed, methods, choose, nodata, coeff, offset)
+
+        st.download_button(
+            label="Download time series as CSV",
+            data=df_dl.to_csv(),
+            file_name=f"smoothed_ts_pwcv={pval_wcv}_pvc={pval_vc}_robust={robust}_boundsopt={bound}.csv",
+            mime='csv',
+        )
+
 # =============================================================================
 #   Main plot
 # =============================================================================
     
-        plot_main(smoothed, methods, choose, nodata)
+        plot_main(df, dfraw, methods)
     
 # =============================================================================
 #   Long Term Average
